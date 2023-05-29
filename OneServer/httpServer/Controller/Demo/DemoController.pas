@@ -4,7 +4,7 @@ interface
 
 uses OneHttpController, OneHttpCtxtResult, OneHttpRouterManage, System.SysUtils,
   System.Generics.Collections, System.Contnrs, System.Classes,
-  FireDAC.Comp.Client, Data.DB, System.JSON;
+  FireDAC.Comp.Client, Data.DB, System.JSON, System.IOUtils;
 
 type
   TPersonResult = class
@@ -39,10 +39,14 @@ type
 
   TDemoController = class(TOneControllerBase)
   public
+    // OnetGet支持Get访问
+    procedure OneGetHelloWorld(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
     // 最终结果:{ResultCode: "0001", ResultMsg: "", ResultCount: 0, ResultData: "欢迎来到HelloWorld"}
     procedure HelloWorld(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
     // 最终结果只输出文本:欢迎来到HelloWorld
     procedure HelloWorldStr(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
+    // 输出文件
+    procedure GetFile(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
     // 最终结果:{ResultCode: "0001", ResultMsg: "", ResultCount: 0, ResultData: {name: "范联满flm123", aag: 32}}
     procedure person(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
     // 无参数方法调用,如果要用到控制层 HTTPCtxt,HTTPResult必需是多例模式
@@ -95,11 +99,10 @@ type
     function OneGetPersonListResult(): TPersonListResult;
     // 圈套类 提交的数据 TPersonResult对象含有对象属性
     // 在 TPersonResult.create要先创建好 FPerson :=  TPersonDemo.Create; 方可接收参数
-    function OnePostPersonListResult(personListResult
-      : TPersonListResult): string;
+    function OnePostPersonListResult(personListResult: TPersonListResult): string;
   end;
 
-function CreateNewDemoController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewDemoController(QRouterItem: TOneRouterWorkItem): TObject;
 // 方法类型注册
 procedure HelloWorldEven(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
 
@@ -144,8 +147,12 @@ begin
   inherited Destroy;
 end;
 
-procedure TDemoController.HelloWorld(QHTTPCtxt: THTTPCtxt;
-  QHTTPResult: THTTPResult);
+procedure TDemoController.OneGetHelloWorld(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
+begin
+  QHTTPResult.ResultRedirect := 'https://baidu.com';
+end;
+
+procedure TDemoController.HelloWorld(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
 begin
   // 默认JSON输出，ResultData=QHTTPResult.ResultOut;
   // 最终结果:{ResultCode: "0001", ResultMsg: "", ResultCount: 0, ResultData: "欢迎来到HelloWorld"}
@@ -153,8 +160,7 @@ begin
   QHTTPResult.SetHTTPResultTrue();
 end;
 
-procedure TDemoController.HelloWorldStr(QHTTPCtxt: THTTPCtxt;
-  QHTTPResult: THTTPResult);
+procedure TDemoController.HelloWorldStr(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
 begin
   QHTTPResult.ResultOut := '欢迎来到HelloWorld';
   // 最终结果只输出文本:欢迎来到HelloWorld
@@ -162,8 +168,14 @@ begin
   QHTTPResult.SetHTTPResultTrue();
 end;
 
-procedure TDemoController.person(QHTTPCtxt: THTTPCtxt;
-  QHTTPResult: THTTPResult);
+procedure TDemoController.GetFile(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
+begin
+  QHTTPResult.ResultOutMode := THTTPResultMode.OUTFILE;
+  QHTTPResult.ResultOut := 'C:\Users\Administrator\Pictures\测试ABCD47030062.bmp';
+  QHTTPCtxt.AddCustomerHead('Content-Disposition', 'attachment;filename=' + TPath.GetFileName(QHTTPResult.ResultOut));
+end;
+
+procedure TDemoController.person(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult);
 var
   lPersonDemo: TPersonDemo;
 begin
@@ -281,6 +293,7 @@ var
   lList: TObjectList;
   i: integer;
 begin
+  result := nil;
   lList := TObjectList.Create;
   for i := 0 to 9 do
   begin
@@ -375,8 +388,7 @@ end;
 
 // 混合参数
 // 以OnePost开头只支持post访问,混合参数person,name取自提交的JSON数据{person:{name: "范联满1", age: 32},name:"范联满2"}反射成類 TPersonDemo
-function TDemoController.OnePostPersonB(person: TPersonDemo; name: string)
-  : TPersonDemo;
+function TDemoController.OnePostPersonB(person: TPersonDemo; name: string): TPersonDemo;
 var
   lPersonDemo: TPersonDemo;
 begin
@@ -388,8 +400,7 @@ begin
   result := lPersonDemo;
 end;
 
-function TDemoController.OnePostPersonList(persons: TList<TPersonDemo>)
-  : TList<TPersonDemo>;
+function TDemoController.OnePostPersonList(persons: TList<TPersonDemo>): TList<TPersonDemo>;
 var
   lPersonDemo: TPersonDemo;
   i: integer;
@@ -415,8 +426,7 @@ begin
   result.person.age := 19;
 end;
 
-function TDemoController.OnePostPersonResult(personResult
-  : TPersonResult): string;
+function TDemoController.OnePostPersonResult(personResult: TPersonResult): string;
 begin
   result := '收到数据成功 code->' + personResult.resultCode;
   if personResult.person <> nil then
@@ -443,8 +453,7 @@ begin
 
 end;
 
-function TDemoController.OnePostPersonListResult(personListResult
-  : TPersonListResult): string;
+function TDemoController.OnePostPersonListResult(personListResult: TPersonListResult): string;
 begin
   result := '收到数据成功 code->' + personListResult.resultCode;
   if personListResult.persons <> nil then
@@ -453,7 +462,7 @@ begin
   end;
 end;
 
-function CreateNewDemoController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewDemoController(QRouterItem: TOneRouterWorkItem): TObject;
 var
   lController: TDemoController;
 begin
@@ -475,14 +484,11 @@ initialization
 
 // 注意，路由名称 不要一样，否则会判定已注册过，跳过
 // 多例模式注册
-OneHttpRouterManage.GetInitRouterManage().AddHTTPPoolWork('DemoA',
-  TDemoController, 100, CreateNewDemoController);
+OneHttpRouterManage.GetInitRouterManage().AddHTTPPoolWork('DemoA', TDemoController, 100, CreateNewDemoController);
 // 单例模式注册
-OneHttpRouterManage.GetInitRouterManage().AddHTTPSingleWork('DemoB',
-  TDemoController, 100, CreateNewDemoController);
+OneHttpRouterManage.GetInitRouterManage().AddHTTPSingleWork('DemoB', TDemoController, 100, CreateNewDemoController);
 // 方法注册
-OneHttpRouterManage.GetInitRouterManage().AddHTTPEvenWork('DemoEven',
-  HelloWorldEven, 10);
+OneHttpRouterManage.GetInitRouterManage().AddHTTPEvenWork('DemoEven', HelloWorldEven, 10);
 
 finalization
 

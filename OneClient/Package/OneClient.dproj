@@ -59,10 +59,10 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <DCC_UsePackage>rtl;RESTComponents;FireDAC;FireDACCommonDriver;FireDACCommon;vcl;dbrtl;soaprtl;$(DCC_UsePackage)</DCC_UsePackage>
+        <DCC_UsePackage>rtl;RESTComponents;FireDAC;FireDACCommonDriver;FireDACCommon;vcl;dbrtl;soaprtl;IndySystem;IndyProtocols;IndyCore;$(DCC_UsePackage)</DCC_UsePackage>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <DCC_UsePackage>rtl;RESTComponents;FireDAC;FireDACCommonDriver;FireDACCommon;vcl;dbrtl;soaprtl;$(DCC_UsePackage)</DCC_UsePackage>
+        <DCC_UsePackage>rtl;RESTComponents;FireDAC;FireDACCommonDriver;FireDACCommon;vcl;dbrtl;soaprtl;IndySystem;IndyProtocols;IndyCore;$(DCC_UsePackage)</DCC_UsePackage>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -89,15 +89,16 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="vcl.dcp"/>
-        <DCCReference Include="rtl.dcp"/>
+        <DCCReference Include="designIde.dcp"/>
+        <DCCReference Include="soaprtl.dcp"/>
         <DCCReference Include="dbrtl.dcp"/>
+        <DCCReference Include="IndySystem.dcp"/>
+        <DCCReference Include="IndyProtocols.dcp"/>
+        <DCCReference Include="IndyCore.dcp"/>
         <DCCReference Include="RESTComponents.dcp"/>
         <DCCReference Include="FireDAC.dcp"/>
         <DCCReference Include="FireDACCommonDriver.dcp"/>
         <DCCReference Include="FireDACCommon.dcp"/>
-        <DCCReference Include="soaprtl.dcp"/>
-        <DCCReference Include="DesignIDE.dcp"/>
         <DCCReference Include="OneClientConnect.pas"/>
         <DCCReference Include="OneClientConst.pas"/>
         <DCCReference Include="OneClientRegister.pas"/>
@@ -126,6 +127,12 @@
         <DCCReference Include="baseLib\OneLog.pas"/>
         <DCCReference Include="baseLib\OneILog.pas"/>
         <DCCReference Include="baseLib\OneThread.pas"/>
+        <DCCReference Include="OneClientUUID.pas"/>
+        <DCCReference Include="OneFast\OneClientFastLsh.pas"/>
+        <DCCReference Include="OneFast\OneClientFastUpdate.pas"/>
+        <DCCReference Include="OneFast\OneClientFastFile.pas"/>
+        <DCCReference Include="websocket\OneWebSocketClient.pas"/>
+        <DCCReference Include="baseLib\OneFunc.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

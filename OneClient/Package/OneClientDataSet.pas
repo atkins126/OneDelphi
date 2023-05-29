@@ -6,8 +6,8 @@ interface
 uses
   System.SysUtils, System.StrUtils, System.Classes, Data.DB,
   FireDAC.Comp.DataSet, FireDAC.Comp.Client, FireDAC.Stan.Intf,
-  FireDAC.Stan.Param, System.Threading,
-  System.Generics.Collections, {$IFDEF MSWINDOWS} Vcl.Dialogs, {$ENDIF}
+  FireDAC.Stan.Param, FireDAC.Phys.Intf, System.Threading,
+  System.Generics.Collections, {$IFDEF MSWINDOWS} Vcl.Dialogs, System.UITypes, {$ENDIF}
   OneClientConnect, OneClientDataInfo, OneClientConst;
 
 type
@@ -18,8 +18,6 @@ type
   private
     //
     FCreateID: string;
-    // 设计时获取相关字段
-    FIsDesignGetFields: boolean;
     // 所属数据集
     FOwnerDataSet: TOneDataSet;
     // OneServer连接
@@ -28,6 +26,8 @@ type
     FZTCode: string;
     // 控件描述
     FDescription: string;
+    // 获取数据库相关信息
+    FMetaInfoKind: TFDPhysMetaInfoKind;
     // 表名,保存时用到
     FTableName: string;
     // 主键,保存时用到
@@ -36,8 +36,6 @@ type
     FOtherKeys: string;
     // 数据集打开数据模式
     FOpenMode: TDataOpenMode;
-    //
-    FIsPost:boolean;
     // 保存数据集模式
     FSaveMode: TDataSaveMode;
     // 服务端返回数据模式
@@ -82,14 +80,11 @@ type
     function GetConnection: TOneConnection;
     procedure SetConnection(const AValue: TOneConnection);
     // 设计模式下获取相关字段
-    procedure SetGetFields(value: boolean);
   public
     constructor Create(QDataSet: TOneDataSet); overload;
     destructor Destroy; override;
   published
     property CreateID: string read FCreateID write FCreateID;
-    /// <param name="IsDesignGetFields">设计时获取相关字段,请先设置好连接及SQL</param>
-    property IsDesignGetFields: boolean read FIsDesignGetFields write SetGetFields;
     /// <param name="OwnerDataSet">所属数据集</param>
     property OwnerDataSet: TOneDataSet read FOwnerDataSet;
     /// <param name="Connection">连接OneServer服务器的连接</param>
@@ -98,6 +93,8 @@ type
     property ZTCode: string read FZTCode write FZTCode;
     /// <param name="FDescription">控件描述</param>
     property Description: string read FDescription write FDescription;
+    /// <param name="FDescription">获取数据库相关信息</param>
+    property MetaInfoKind: TFDPhysMetaInfoKind read FMetaInfoKind write FMetaInfoKind default mkTables;
     /// <param name="TableName">表名,保存时会用到</param>
     property TableName: string read FTableName write FTableName;
     /// <param name="PrimaryKey">主键,保存时用到</param>
@@ -106,7 +103,6 @@ type
     property OtherKeys: string read FOtherKeys write FOtherKeys;
     /// <param name="OpenMode">数据集打开模式</param>
     property OpenMode: TDataOpenMode read FOpenMode write FOpenMode;
-    property IsPost:boolean read FIsPost write FIsPost;
     /// <param name="SaveMode">保存数据集模式,数据集delate和DML操作语句</param>
     property SaveMode: TDataSaveMode read FSaveMode write FSaveMode;
     /// <param name="DataReturnMode">数据集返回模式</param>
@@ -150,6 +146,8 @@ type
   [ComponentPlatformsAttribute(OneAllPlatforms)]
   TOneDataSet = class(TFDMemTable)
   private
+    FActiveDesign: boolean;
+    FActiveDesignOpen: boolean;
     // one扩展属性
     FDataInfo: TOneDataInfo;
     // 多个数据集
@@ -165,11 +163,14 @@ type
     procedure SetCommandText(const value: TStrings);
     procedure SQLListChanged(Sender: TObject);
     procedure SetMultiIndex(value: Integer);
+    procedure SetActiveDesign(value: boolean);
+    procedure SetActiveDesignOpen(value: boolean);
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   public
+    function IsEdit: boolean;
     /// <summary>
     /// 打开数据集，返回所有数据，如果Pagesize和PageIndex设置，则返回分页数据
     /// </summary>
@@ -180,12 +181,18 @@ type
     /// </summary>
     /// <returns>失败返回False,错误信息在ErrMsg属性</returns>
     function OpenData: boolean;
-    function OpenDatas(QOpenDatas: array of TOneDataSet): boolean;
+    function OpenDatas(QOpenDatas: array of TOneDataSet): boolean; overload;
+    function OpenDatas(QOpenDatas: TList<TOneDataSet>): boolean; overload;
     /// <summary>
     /// 异步打开数据集，返回所有数据，如果Pagesize和PageIndex设置，则返回分页数据
     /// </summary>
     /// <returns>成功失败多调用 QCallEven</returns>
     procedure OpenDataAsync(QCallEven: EvenOKCallBack);
+    /// <summary>
+    /// 检重复,输入SQL和参数还有原值,是否有重复的字段，依托于DataSet但不会影响本身DataSet任何东东
+    /// </summary>
+    /// <returns>成功失败多调用 QCallEven</returns>
+    function CheckRepeat(QSQL: string; QParamValues: array of Variant; QSourceValue: string): boolean;
     /// <summary>
     /// 保存数据
     /// </summary>
@@ -196,14 +203,21 @@ type
     /// </summary>
     /// <returns>失败返回False,错误信息在ErrMsg属性</returns>
     function SaveData: boolean;
-    function SaveDatas(QOpenDatas: array of TOneDataSet): boolean;
+    function SaveDatas(QOpenDatas: array of TOneDataSet): boolean; overload;
+    function SaveDatas(QOpenDatas: TList<TOneDataSet>): boolean; overload;
     procedure SaveDataAsync(QCallEven: EvenOKCallBack);
     /// <summary>
     /// 执行DML语句,update,insert,delete语句
     /// </summary>
     /// <returns>失败返回False,错误信息在ErrMsg属性</returns>
     function ExecDML: boolean;
-
+    function ExecDMLs(QDMLDatas: array of TOneDataSet): boolean;
+    /// <summary>
+    /// 执行DML语句,update,insert,delete语句，依托于DataSet但不会影响本身DataSet任何东东
+    /// QMustOneAffected:是否有一条必需受影响
+    /// </summary>
+    /// <returns>失败返回False,错误信息在ErrMsg属性</returns>
+    function ExecDMLSQL(QSQL: string; QParamValues: array of Variant; QMustOneAffected: boolean = true): boolean;
     /// <summary>
     /// 执行存储过程，返回数据
     /// </summary>
@@ -214,6 +228,12 @@ type
     /// </summary>
     /// <returns>失败返回False,错误信息在ErrMsg属性</returns>
     function ExecStored: boolean;
+    /// <summary>
+    /// 执行SQL脚本语句,跟据你写的脚本执行,
+    /// </summary>
+    /// <returns>失败返回False,错误信息在ErrMsg属性</returns>
+    function ExecScript: boolean;
+    function GetDBMetaInfo: boolean;
     /// <summary>
     /// 事务控制第一步:获取账套连接,标识成事务账套
     /// </summary>
@@ -239,6 +259,9 @@ type
     /// </summary>
     /// <returns>失败返回False,错误信息在ErrMsg属性</returns>
     function RollbackTran(): boolean;
+    //
+    function FindParam(const AValue: string): TFDParam;
+    function ParamByName(const AValue: string): TFDParam;
   published
     { Published declarations }
     /// <param name="SQL">SQL语句，您可以在这里设置您要执行的SQL语句文本，然后通过OpenData方法打开数据集</param>
@@ -250,6 +273,9 @@ type
     /// <param name="MultiData">返回多个据存储的地方</param>
     property MultiData: TList<TFDMemTable> read FMultiData write FMultiData;
     property MultiIndex: Integer read FMultiIndex write SetMultiIndex;
+    /// <param name="ActiveDesign">设计时获取相关字段,请先设置好连接及SQL</param>
+    property ActiveDesign: boolean read FActiveDesign write SetActiveDesign;
+    property ActiveDesignOpen: boolean read FActiveDesignOpen write SetActiveDesignOpen;
   end;
 
 implementation
@@ -266,7 +292,7 @@ end;
 constructor TOneDataSet.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  Self.CachedUpdates := True;
+  Self.CachedUpdates := true;
   FParams := TFDParams.Create;
   FCommandText := TStringList.Create;
   FCommandText.TrailingLineBreak := False;
@@ -340,7 +366,7 @@ begin
     LNewParams := TParams.Create(Self);
     LOldFDParams := TFDParams.Create;
     try
-      LNewParams.ParseSQL(FCommandText.Text, True);
+      LNewParams.ParseSQL(FCommandText.Text, true);
       // 值拷贝
       for i := 0 to FParams.Count - 1 do
       begin
@@ -419,6 +445,194 @@ begin
   end;
 end;
 
+procedure TOneDataSet.SetActiveDesign(value: boolean);
+var
+  lTempSQL: string;
+  i, iField: Integer;
+  tempData: TOneDataSet;
+  lField, lFieldNew: TField;
+  lFileName: string;
+  lFieldClass: TFieldClass;
+  function DataSetOwner(ADataSet: TComponent): TComponent;
+  begin
+    Result := ADataSet.Owner;
+    if csSubComponent in ADataSet.ComponentStyle then
+      Result := DataSetOwner(Result);
+  end;
+
+begin
+
+  // 关闭数据集
+  if csDesigning in Self.ComponentState then
+  begin
+    if not value then
+    begin
+      exit;
+    end;
+    if Self.DataInfo.Connection = nil then
+    begin
+{$IFDEF MSWINDOWS}
+      ShowMessage('打开数据失败,Connection=nil');
+{$ENDIF}
+      exit;
+    end;
+
+    // 如果有参数,参数是否赋值
+    for i := 0 to Self.Params.Count - 1 do
+    begin
+      if Self.Params[i].IsNull then
+      begin
+{$IFDEF MSWINDOWS}
+        ShowMessage('打开数据失败,请先给参数赋值');
+{$ENDIF}
+        exit;
+      end;
+    end;
+    if not Self.DataInfo.Connection.DoConnect(true) then
+    begin
+{$IFDEF MSWINDOWS}
+      ShowMessage(Self.DataInfo.Connection.ErrMsg);
+{$ENDIF}
+      exit;
+    end;
+{$IFDEF MSWINDOWS}
+    lTempSQL := inputbox('跟据SQL获取字段', 'SQL提醒', Self.SQL.Text);
+    if lTempSQL = '' then
+      exit;
+    // if MessageDlg('请认真检查SQL,防止打开大数据,确定要跟据以下SQL打开数据:' + Self.SQL.Text,
+    // mtInformation, [mbOK, mbCancel], 0, mbOK) <> mrok then
+    // begin
+    // exit;
+    // end;
+{$ENDIF}
+    tempData := TOneDataSet.Create(nil);
+    try
+      tempData.DataInfo.Connection := Self.DataInfo.Connection;
+      tempData.SQL.Text := lTempSQL;
+      tempData.DataInfo.FPageSize := 50;
+      for i := 0 to Self.Params.Count - 1 do
+      begin
+        tempData.Params[i].value := Self.Params[i].value;
+      end;
+      if Self.Active then
+        Self.Close;
+      if not tempData.OpenData then
+      begin
+{$IFDEF MSWINDOWS}
+        ShowMessage(tempData.DataInfo.ErrMsg);
+{$ENDIF}
+      end
+      else
+      begin
+        for iField := 0 to tempData.Fields.Count - 1 do
+        begin
+          lField := tempData.Fields[iField];
+          lFileName := lField.FieldName;
+          if Self.Fields.FindField(lFileName) <> nil then
+          begin
+            // 存在跳过
+            continue;
+          end;
+          // 不存在创建
+          lFieldClass := TFieldClass(lField.ClassType);
+          lFieldNew := lFieldClass.Create(DataSetOwner(Self));
+          try
+            lFieldNew.Name := Self.Name + lFileName;
+            lFieldNew.FieldName := lFileName;
+            lFieldNew.FieldKind := lField.FieldKind;
+            if lField.Lookup then
+            begin
+              lFieldNew.FieldKind := fkLookup;
+              lFieldNew.LookupDataset := lField.LookupDataset;
+              lFieldNew.KeyFields := lField.KeyFields;
+              lFieldNew.LookupKeyFields := lField.LookupKeyFields;
+              lFieldNew.LookupResultField := lField.LookupResultField;
+            end
+            else if lFieldNew.FieldKind = fkAggregate then
+            begin
+              lFieldNew.Visible := False;
+            end;
+            lFieldNew.Size := lField.Size;
+            lFieldNew.DataSet := Self;
+          except
+            lFieldNew.Free;
+            raise;
+          end;
+        end;
+        // 如果喜欢在设计时看数据的,这句打开就行
+        // Self.CopyDataSet(tempData, [coRestart, coAppend]);
+{$IFDEF MSWINDOWS}
+        ShowMessage('打开数据成功,请打开字段设计器,获取字段');
+{$ENDIF}
+      end;
+    finally
+      tempData.Free;
+    end;
+  end;
+END;
+
+procedure TOneDataSet.SetActiveDesignOpen(value: boolean);
+var
+  i: Integer;
+begin
+  // 关闭数据集
+  if csDesigning in Self.ComponentState then
+  begin
+    if not value then
+    begin
+      exit;
+    end;
+    if Self.DataInfo.Connection = nil then
+    begin
+{$IFDEF MSWINDOWS}
+      ShowMessage('打开数据失败,Connection=nil');
+{$ENDIF}
+      exit;
+    end;
+
+    // 如果有参数,参数是否赋值
+    for i := 0 to Self.Params.Count - 1 do
+    begin
+      if Self.Params[i].IsNull then
+      begin
+{$IFDEF MSWINDOWS}
+        ShowMessage('打开数据失败,请先给参数赋值');
+{$ENDIF}
+        exit;
+      end;
+    end;
+    if not Self.DataInfo.Connection.DoConnect(true) then
+    begin
+{$IFDEF MSWINDOWS}
+      ShowMessage(Self.DataInfo.Connection.ErrMsg);
+{$ENDIF}
+      exit;
+    end;
+{$IFDEF MSWINDOWS}
+    if MessageDlg('请认真检查SQL,防止打开大数据,确定要跟据以下SQL打开数据:' + Self.SQL.Text,
+      mtInformation, [mbOK, mbCancel], 0, mbOK) <> mrok then
+    begin
+      exit;
+    end;
+{$ENDIF}
+    if not Self.OpenData then
+    begin
+{$IFDEF MSWINDOWS}
+      ShowMessage('打开数据失败,原因:' + Self.DataInfo.ErrMsg);
+{$ENDIF}
+    end
+    else
+    begin
+      ShowMessage('打开数据成功,Active属性默认为true,建议在设计完后关闭该属性');
+    end;
+  end;
+END;
+
+function TOneDataSet.IsEdit: boolean;
+begin
+  Result := (Self.State in dsEditModes) or (Self.ChangeCount > 0);
+end;
+
 function TOneDataSet.Open: boolean;
 begin
   Result := Self.OpenData;
@@ -439,7 +653,19 @@ begin
     Self.FDataInfo.FErrMsg := '数据集DataInfo.SQL=空';
     exit;
   end;
-  Result := Self.FDataInfo.FConnection.OpenData(Self);
+  if Self.FDataInfo.OpenMode = TDataOpenMode.localSQL then
+  begin
+    Self.FDataInfo.FErrMsg := '当数据集打开模式为localSQL时,只支持本地查询';
+    exit;
+  end;
+  if Self.DataInfo.OpenMode = TDataOpenMode.OpenStored then
+  begin
+    Result := Self.FDataInfo.FConnection.ExecStored(Self);
+  end
+  else
+  begin
+    Result := Self.FDataInfo.FConnection.OpenData(Self);
+  end;
 end;
 
 function TOneDataSet.OpenDatas(QOpenDatas: array of TOneDataSet): boolean;
@@ -459,6 +685,37 @@ begin
   QList := TList<TObject>.Create;
   try
     for i := Low(QOpenDatas) to High(QOpenDatas) do
+    begin
+      QList.Add(QOpenDatas[i]);
+    end;
+    Result := Self.FDataInfo.FConnection.OpenDatas(QList, lErrMsg);
+    if not Result then
+    begin
+      Self.DataInfo.ErrMsg := lErrMsg;
+    end;
+  finally
+    QList.Clear;
+    QList.Free;
+  end;
+end;
+
+function TOneDataSet.OpenDatas(QOpenDatas: TList<TOneDataSet>): boolean;
+var
+  QList: TList<TObject>;
+  i: Integer;
+  lErrMsg: string;
+begin
+  Result := False;
+  if Self.FDataInfo.FConnection = nil then
+    Self.FDataInfo.FConnection := OneClientConnect.Unit_Connection;
+  if Self.FDataInfo.FConnection = nil then
+  begin
+    Self.FDataInfo.FErrMsg := '数据集Connection=nil';
+    exit;
+  end;
+  QList := TList<TObject>.Create;
+  try
+    for i := 0 to QOpenDatas.Count - 1 do
     begin
       QList.Add(QOpenDatas[i]);
     end;
@@ -500,6 +757,50 @@ begin
   aTask.Start;
 end;
 
+function TOneDataSet.CheckRepeat(QSQL: string; QParamValues: array of Variant; QSourceValue: string): boolean;
+var
+  lData: TOneDataSet;
+  i: Integer;
+begin
+  Result := true;
+  lData := TOneDataSet.Create(nil);
+  try
+    lData.DataInfo.FConnection := Self.DataInfo.FConnection;
+    lData.DataInfo.ZTCode := Self.DataInfo.ZTCode;
+    lData.SQL.Text := QSQL;
+    for i := Low(QParamValues) to High(QParamValues) do
+    begin
+      lData.Params[i].value := QParamValues[i];
+    end;
+    if not lData.Open then
+    begin
+      Self.DataInfo.ErrMsg := lData.DataInfo.ErrMsg;
+      exit;
+    end;
+    if lData.RecordCount >= 2 then
+    begin
+      Self.DataInfo.ErrMsg := '数据重复';
+      exit;
+    end;
+    if lData.RecordCount = 1 then
+    begin
+      if lData.FieldCount > 1 then
+      begin
+        Self.DataInfo.ErrMsg := '有且只能判断一个字段,请纠正判断语句,只能代一个字段';
+        exit;
+      end;
+      if lData.Fields[0].AsString <> QSourceValue then
+      begin
+        Self.DataInfo.ErrMsg := '数据重复';
+        exit;
+      end;
+    end;
+    Result := False;
+  finally
+    lData.Free;
+  end;
+end;
+
 function TOneDataSet.Save: boolean;
 begin
   Result := Self.SaveData;
@@ -535,6 +836,37 @@ begin
   QList := TList<TObject>.Create;
   try
     for i := Low(QOpenDatas) to High(QOpenDatas) do
+    begin
+      QList.Add(QOpenDatas[i]);
+    end;
+    Result := Self.FDataInfo.FConnection.SaveDatas(QList, lErrMsg);
+    if not Result then
+    begin
+      Self.DataInfo.ErrMsg := lErrMsg;
+    end;
+  finally
+    QList.Clear;
+    QList.Free;
+  end;
+end;
+
+function TOneDataSet.SaveDatas(QOpenDatas: TList<TOneDataSet>): boolean;
+var
+  QList: TList<TObject>;
+  i: Integer;
+  lErrMsg: string;
+begin
+  Result := False;
+  if Self.FDataInfo.FConnection = nil then
+    Self.FDataInfo.FConnection := OneClientConnect.Unit_Connection;
+  if Self.FDataInfo.FConnection = nil then
+  begin
+    Self.FDataInfo.FErrMsg := '数据集Connection=nil';
+    exit;
+  end;
+  QList := TList<TObject>.Create;
+  try
+    for i := 0 to QOpenDatas.Count - 1 do
     begin
       QList.Add(QOpenDatas[i]);
     end;
@@ -597,6 +929,45 @@ begin
   end;
 end;
 
+function TOneDataSet.ExecDMLs(QDMLDatas: array of TOneDataSet): boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to High(QDMLDatas) do
+  begin
+    QDMLDatas[i].DataInfo.SaveMode := TDataSaveMode.saveDML;
+  end;
+  Result := Self.SaveDatas(QDMLDatas);
+end;
+
+function TOneDataSet.ExecDMLSQL(QSQL: string; QParamValues: array of Variant; QMustOneAffected: boolean = true): boolean;
+var
+  lData: TOneDataSet;
+  i: Integer;
+begin
+  Result := False;
+  lData := TOneDataSet.Create(nil);
+  try
+    lData.DataInfo.FConnection := Self.DataInfo.FConnection;
+    lData.DataInfo.ZTCode := Self.DataInfo.ZTCode;
+    if QMustOneAffected then
+      lData.DataInfo.AffectedMustCount := 1;
+    lData.SQL.Text := QSQL;
+    for i := Low(QParamValues) to High(QParamValues) do
+    begin
+      lData.Params[i].value := QParamValues[i];
+    end;
+    if not lData.ExecDML then
+    begin
+      Self.DataInfo.ErrMsg := lData.DataInfo.ErrMsg;
+      exit;
+    end;
+    Result := true;
+  finally
+    lData.Free;
+  end;
+end;
+
 function TOneDataSet.OpenStored: boolean;
 begin
   Result := False;
@@ -612,7 +983,7 @@ begin
     Self.FDataInfo.FErrMsg := '未设置存储过程名称';
     exit;
   end;
-  Self.FDataInfo.IsReturnData := True;
+  Self.FDataInfo.IsReturnData := true;
   Result := Self.FDataInfo.FConnection.ExecStored(Self);
 end;
 
@@ -634,6 +1005,38 @@ begin
   end;
   Self.FDataInfo.IsReturnData := False;
   Result := Self.FDataInfo.FConnection.ExecStored(Self);
+end;
+
+function TOneDataSet.ExecScript: boolean;
+begin
+  Result := False;
+  if Self.FDataInfo.FConnection = nil then
+    Self.FDataInfo.FConnection := OneClientConnect.Unit_Connection;
+  if Self.FDataInfo.FConnection = nil then
+  begin
+    Self.FDataInfo.FErrMsg := '数据集Connection=nil';
+    exit;
+  end;
+  if Self.SQL.Text = '' then
+  begin
+    Self.FDataInfo.FErrMsg := '无相关脚本';
+    exit;
+  end;
+  Self.FDataInfo.IsReturnData := False;
+  Result := Self.FDataInfo.FConnection.ExecScript(Self);
+end;
+
+function TOneDataSet.GetDBMetaInfo: boolean;
+begin
+  Result := False;
+  if Self.FDataInfo.FConnection = nil then
+    Self.FDataInfo.FConnection := OneClientConnect.Unit_Connection;
+  if Self.FDataInfo.FConnection = nil then
+  begin
+    Self.FDataInfo.FErrMsg := '数据集Connection=nil';
+    exit;
+  end;
+  Result := Self.FDataInfo.FConnection.GetDBMetaInfo(Self);
 end;
 
 // 1.先获取一个账套连接,标记成事务账套
@@ -823,13 +1226,25 @@ begin
     lOneTran.Free;
   end;
 end;
+
+{ ------------------------------------------------------------------------------- }
+function TOneDataSet.FindParam(const AValue: string): TFDParam;
+begin
+  Result := FParams.FindParam(AValue);
+end;
+
+{ ------------------------------------------------------------------------------- }
+function TOneDataSet.ParamByName(const AValue: string): TFDParam;
+begin
+  Result := FParams.ParamByName(AValue);
+end;
 // **********
 
 constructor TOneDataInfo.Create(QDataSet: TOneDataSet);
 begin
   inherited Create();
   // 设计时获取相关字段
-  FIsDesignGetFields := False;
+  // FIsDesignGetFields := False;
   // 所属数据集
   FOwnerDataSet := QDataSet;
   FOpenMode := TDataOpenMode.OpenData;
@@ -872,18 +1287,6 @@ end;
 procedure TOneDataInfo.SetConnection(const AValue: TOneConnection);
 begin
   Self.FConnection := AValue;
-end;
-
-procedure TOneDataInfo.SetGetFields(value: boolean);
-var
-  lStream: TMemoryStream;
-  lTemp: TFDMemTable;
-  i: Integer;
-  lFieldDef: TFieldDef;
-  lField: TField;
-  lListField: TList<TField>;
-begin
-  Self.FIsDesignGetFields := False;
 end;
 
 end.

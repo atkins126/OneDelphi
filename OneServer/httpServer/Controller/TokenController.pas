@@ -28,15 +28,18 @@ type
     function ClientDisConnect(TokenID: string): TActionResult<string>;
     function ClientPing(): TActionResult<string>;
     function ClientConnectPing(QCleintConnect: TClientConnect): TActionResult<string>;
+    // 批量产生UUIDs
+    function GetUUID(): TActionResult<Int64>;
+    function GetUUIDs(QCount: Integer): TActionResult<TList<Int64>>;
   end;
 
-function CreateNewOneTokenController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewOneTokenController(QRouterItem: TOneRouterWorkItem): TObject;
 
 implementation
 
-uses OneGlobal;
+uses OneGlobal, OneUUID;
 
-function CreateNewOneTokenController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewOneTokenController(QRouterItem: TOneRouterWorkItem): TObject;
 var
   lController: TOneTokenController;
 begin
@@ -51,7 +54,7 @@ end;
 function TOneTokenController.ClientConnect(QCleintConnect: TClientConnect): TActionResult<TClientConnect>;
 var
   lOneGlobal: TOneGlobal;
-  lTokenItem: IOneTokenItem;
+  lTokenItem: TOneTokenItem;
   lList: TList<TOneTokenItem>;
   i: Integer;
 begin
@@ -65,8 +68,8 @@ begin
     exit;
   end;
   lTokenItem := lOneGlobal.TokenManage.AddNewToken();
-  lTokenItem.SetLoginIP(QCleintConnect.ClientIP);
-  lTokenItem.SetLoginMac(QCleintConnect.ClientMac);
+  lTokenItem.LoginIP := QCleintConnect.ClientIP;
+  lTokenItem.LoginMac := QCleintConnect.ClientMac;
   QCleintConnect.TokenID := lTokenItem.TokenID;
   QCleintConnect.PrivateKey := lTokenItem.PrivateKey;
   QCleintConnect.ConnectSecretkey := '';
@@ -95,7 +98,7 @@ end;
 function TOneTokenController.ClientConnectPing(QCleintConnect: TClientConnect): TActionResult<string>;
 var
   lOneGlobal: TOneGlobal;
-  lTokenItem: IOneTokenItem;
+  lTokenItem: TOneTokenItem;
 begin
   result := TActionResult<string>.Create(false, false);
   lOneGlobal := TOneGlobal.GetInstance();
@@ -106,6 +109,32 @@ begin
     exit;
   end;
   result.ResultData := '';
+  result.SetResultTrue();
+end;
+
+//只取一个
+function TOneTokenController.GetUUID(): TActionResult<Int64>;
+begin
+  result := TActionResult<Int64>.Create(false, false);
+  result.ResultData := OneUUID.GetUUID();
+  result.SetResultTrue();
+end;
+
+// 一次性取多少个ID到服务端
+function TOneTokenController.GetUUIDs(QCount: Integer): TActionResult<TList<Int64>>;
+var
+  i: Integer;
+begin
+  result := TActionResult < TList < Int64 >>.Create(true, false);
+  if QCount <= 0 then
+  begin
+    QCount := 1;
+  end;
+  result.ResultData := TList<Int64>.Create;
+  for i := 0 to QCount - 1 do
+  begin
+    result.ResultData.Add(OneUUID.GetUUID());
+  end;
   result.SetResultTrue();
 end;
 

@@ -6,10 +6,10 @@
         <Projects Include="Package\OneClient.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="ClientDemo\OneClientDemo.dproj">
+        <Projects Include="ClientDemo\OneCleintDemoDatas.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="ClientDemo\OneCleintDemoDatas.dproj">
+        <Projects Include="ClientDemo\OneClientDemo.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="ClientDemo\OneCleintDemoCustTran.dproj">
@@ -25,6 +25,36 @@
             <Dependencies/>
         </Projects>
         <Projects Include="ClientDemo\OneClientDemoUpDownChunt.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoUUID.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoMetaInfo.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoSQLToClass.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoLsh.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoUpdate.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoFastFile.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoFastApi.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoWebSocket.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoWebSocketChat.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ClientDemo\OneClientDemoScript.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -44,15 +74,6 @@
     <Target Name="OneClient:Make">
         <MSBuild Projects="Package\OneClient.dproj" Targets="Make"/>
     </Target>
-    <Target Name="OneClientDemo">
-        <MSBuild Projects="ClientDemo\OneClientDemo.dproj"/>
-    </Target>
-    <Target Name="OneClientDemo:Clean">
-        <MSBuild Projects="ClientDemo\OneClientDemo.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="OneClientDemo:Make">
-        <MSBuild Projects="ClientDemo\OneClientDemo.dproj" Targets="Make"/>
-    </Target>
     <Target Name="OneCleintDemoDatas">
         <MSBuild Projects="ClientDemo\OneCleintDemoDatas.dproj"/>
     </Target>
@@ -61,6 +82,15 @@
     </Target>
     <Target Name="OneCleintDemoDatas:Make">
         <MSBuild Projects="ClientDemo\OneCleintDemoDatas.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemo">
+        <MSBuild Projects="ClientDemo\OneClientDemo.dproj"/>
+    </Target>
+    <Target Name="OneClientDemo:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemo:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemo.dproj" Targets="Make"/>
     </Target>
     <Target Name="OneCleintDemoCustTran">
         <MSBuild Projects="ClientDemo\OneCleintDemoCustTran.dproj"/>
@@ -107,14 +137,104 @@
     <Target Name="OneClientDemoUpDownChunt:Make">
         <MSBuild Projects="ClientDemo\OneClientDemoUpDownChunt.dproj" Targets="Make"/>
     </Target>
+    <Target Name="OneClientDemoUUID">
+        <MSBuild Projects="ClientDemo\OneClientDemoUUID.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoUUID:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoUUID.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoUUID:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoUUID.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemoMetaInfo">
+        <MSBuild Projects="ClientDemo\OneClientDemoMetaInfo.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoMetaInfo:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoMetaInfo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoMetaInfo:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoMetaInfo.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemoSQLToClass">
+        <MSBuild Projects="ClientDemo\OneClientDemoSQLToClass.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoSQLToClass:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoSQLToClass.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoSQLToClass:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoSQLToClass.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemoLsh">
+        <MSBuild Projects="ClientDemo\OneClientDemoLsh.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoLsh:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoLsh.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoLsh:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoLsh.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemoUpdate">
+        <MSBuild Projects="ClientDemo\OneClientDemoUpdate.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoUpdate:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoUpdate.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoUpdate:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoUpdate.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemoFastFile">
+        <MSBuild Projects="ClientDemo\OneClientDemoFastFile.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoFastFile:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoFastFile.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoFastFile:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoFastFile.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemoFastApi">
+        <MSBuild Projects="ClientDemo\OneClientDemoFastApi.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoFastApi:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoFastApi.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoFastApi:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoFastApi.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemoWebSocket">
+        <MSBuild Projects="ClientDemo\OneClientDemoWebSocket.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoWebSocket:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoWebSocket.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoWebSocket:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoWebSocket.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemoWebSocketChat">
+        <MSBuild Projects="ClientDemo\OneClientDemoWebSocketChat.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoWebSocketChat:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoWebSocketChat.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoWebSocketChat:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoWebSocketChat.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="OneClientDemoScript">
+        <MSBuild Projects="ClientDemo\OneClientDemoScript.dproj"/>
+    </Target>
+    <Target Name="OneClientDemoScript:Clean">
+        <MSBuild Projects="ClientDemo\OneClientDemoScript.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="OneClientDemoScript:Make">
+        <MSBuild Projects="ClientDemo\OneClientDemoScript.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="OneClient;OneClientDemo;OneCleintDemoDatas;OneCleintDemoCustTran;OneCleintDemoPostGet;OneCleintDemoAsync;OneClientDemoVirtualFile;OneClientDemoUpDownChunt"/>
+        <CallTarget Targets="OneClient;OneCleintDemoDatas;OneClientDemo;OneCleintDemoCustTran;OneCleintDemoPostGet;OneCleintDemoAsync;OneClientDemoVirtualFile;OneClientDemoUpDownChunt;OneClientDemoUUID;OneClientDemoMetaInfo;OneClientDemoSQLToClass;OneClientDemoLsh;OneClientDemoUpdate;OneClientDemoFastFile;OneClientDemoFastApi;OneClientDemoWebSocket;OneClientDemoWebSocketChat;OneClientDemoScript"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="OneClient:Clean;OneClientDemo:Clean;OneCleintDemoDatas:Clean;OneCleintDemoCustTran:Clean;OneCleintDemoPostGet:Clean;OneCleintDemoAsync:Clean;OneClientDemoVirtualFile:Clean;OneClientDemoUpDownChunt:Clean"/>
+        <CallTarget Targets="OneClient:Clean;OneCleintDemoDatas:Clean;OneClientDemo:Clean;OneCleintDemoCustTran:Clean;OneCleintDemoPostGet:Clean;OneCleintDemoAsync:Clean;OneClientDemoVirtualFile:Clean;OneClientDemoUpDownChunt:Clean;OneClientDemoUUID:Clean;OneClientDemoMetaInfo:Clean;OneClientDemoSQLToClass:Clean;OneClientDemoLsh:Clean;OneClientDemoUpdate:Clean;OneClientDemoFastFile:Clean;OneClientDemoFastApi:Clean;OneClientDemoWebSocket:Clean;OneClientDemoWebSocketChat:Clean;OneClientDemoScript:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="OneClient:Make;OneClientDemo:Make;OneCleintDemoDatas:Make;OneCleintDemoCustTran:Make;OneCleintDemoPostGet:Make;OneCleintDemoAsync:Make;OneClientDemoVirtualFile:Make;OneClientDemoUpDownChunt:Make"/>
+        <CallTarget Targets="OneClient:Make;OneCleintDemoDatas:Make;OneClientDemo:Make;OneCleintDemoCustTran:Make;OneCleintDemoPostGet:Make;OneCleintDemoAsync:Make;OneClientDemoVirtualFile:Make;OneClientDemoUpDownChunt:Make;OneClientDemoUUID:Make;OneClientDemoMetaInfo:Make;OneClientDemoSQLToClass:Make;OneClientDemoLsh:Make;OneClientDemoUpdate:Make;OneClientDemoFastFile:Make;OneClientDemoFastApi:Make;OneClientDemoWebSocket:Make;OneClientDemoWebSocketChat:Make;OneClientDemoScript:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

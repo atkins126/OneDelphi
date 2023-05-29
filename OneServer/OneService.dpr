@@ -6,6 +6,7 @@ program OneService;
 uses
   Vcl.Forms,
   Winapi.Windows,
+  system.IOUtils,
   frm_main in 'frm_main.pas' {frmMain},
   OneTokenManage in 'basLib\token\OneTokenManage.pas',
   OneHttpServer in 'httpServer\OneHttpServer.pas',
@@ -26,7 +27,6 @@ uses
   Neon.Core.Serializers.DB in 'NeonSerialization\Neon.Core.Serializers.DB.pas',
   Neon.Core.Serializers.Nullables in 'NeonSerialization\Neon.Core.Serializers.Nullables.pas',
   Neon.Core.Serializers.RTL in 'NeonSerialization\Neon.Core.Serializers.RTL.pas',
-  Neon.Core.Serializers.VCL in 'NeonSerialization\Neon.Core.Serializers.VCL.pas',
   Neon.Core.TypeInfo in 'NeonSerialization\Neon.Core.TypeInfo.pas',
   Neon.Core.Types in 'NeonSerialization\Neon.Core.Types.pas',
   Neon.Core.Utils in 'NeonSerialization\Neon.Core.Utils.pas',
@@ -71,7 +71,40 @@ uses
   UniGoodsController in 'OneUniDemo\UniGoodsController.pas',
   UniBillSendController in 'OneUniDemo\UniBillSendController.pas',
   UniClass in 'OneUniDemo\UniClass.pas',
-  UniSendReceivController in 'OneUniDemo\UniSendReceivController.pas';
+  UniSendReceivController in 'OneUniDemo\UniSendReceivController.pas',
+  OneFastModuleManage in 'OneFastCleint\OneFastModuleManage.pas',
+  OneFastModuleController in 'OneFastCleint\OneFastModuleController.pas',
+  ZTManageController in 'httpServer\Controller\ZTManageController.pas',
+  DemoUrlPathController in 'httpServer\Controller\Demo\DemoUrlPathController.pas',
+  OneFastApiManage in 'OneFastApi\OneFastApiManage.pas',
+  OneFastApiController in 'OneFastApi\OneFastApiController.pas',
+  OneFastApiDo in 'OneFastApi\OneFastApiDo.pas',
+  WeiXinManage in 'OneFastWeiXin\WeiXinManage.pas',
+  WeixinApi in 'OneFastWeiXin\WeixinApi.pas',
+  WeixinAuthController in 'OneFastWeiXin\WeixinAuthController.pas',
+  WeixinAdminController in 'OneFastWeiXin\WeixinAdminController.pas',
+  WeiXinMinApi in 'OneFastWeiXin\WeiXinMinApi.pas',
+  WeixinApiPublic in 'OneFastWeiXin\WeixinApiPublic.pas',
+  uDefaultIdGenerator in 'basLib\uuid\uDefaultIdGenerator.pas',
+  uYitIdHelper in 'basLib\uuid\uYitIdHelper.pas',
+  uIdGeneratorOptions in 'basLib\uuid\Contract\uIdGeneratorOptions.pas',
+  uIIdGenerator in 'basLib\uuid\Contract\uIIdGenerator.pas',
+  uISnowWorker in 'basLib\uuid\Contract\uISnowWorker.pas',
+  uTOverCostActionArg in 'basLib\uuid\Contract\uTOverCostActionArg.pas',
+  uSnowWorkerM1 in 'basLib\uuid\Core\uSnowWorkerM1.pas',
+  uSnowWorkerM2 in 'basLib\uuid\Core\uSnowWorkerM2.pas',
+  uSnowWorkerM3 in 'basLib\uuid\Core\uSnowWorkerM3.pas',
+  OneUUID in 'basLib\uuid\OneUUID.pas',
+  OneFastLshManage in 'OneFastLsh\OneFastLshManage.pas',
+  OneFastLshController in 'OneFastLsh\OneFastLshController.pas',
+  OneFastUpdateManage in 'OneFastUpload\OneFastUpdateManage.pas',
+  OneFastUpdateController in 'OneFastUpload\OneFastUpdateController.pas',
+  OneFastFileMange in 'OneFastFile\OneFastFileMange.pas',
+  OneFastFileController in 'OneFastFile\OneFastFileController.pas',
+  OneWsChatController in 'httpServer\Controller\OneWsChatController.pas',
+  OneWebSocketConst in 'httpServer\OneWebSocketConst.pas',
+  OneFastFlowManage in 'OneFastFlow\OneFastFlowManage.pas',
+  OneFastFlowController in 'OneFastFlow\OneFastFlowController.pas';
 
 var
   lpStartupInfo: TStartupInfo;
@@ -84,6 +117,7 @@ begin
   if DebugHook <> 0 then
     ReportMemoryLeaksOnShutdown := True;
   // 设置软件系统时间格式
+  Application.UpdateFormatSettings := false;
   OneDateTimeHelper.SetSystemDataTimeFormatSettings();
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TfrmMain, frmMain);
@@ -101,4 +135,3 @@ begin
   end;
 
 end.
-

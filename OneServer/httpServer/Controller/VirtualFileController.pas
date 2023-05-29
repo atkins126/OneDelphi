@@ -22,13 +22,13 @@ type
     function GetFileMd5(QVirtualInfo: TVirtualInfo): TActionResult<string>;
   end;
 
-function CreateNewVirtualFileController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewVirtualFileController(QRouterItem: TOneRouterWorkItem): TObject;
 
 implementation
 
 uses OneGlobal, OneFileHelper, OneStreamString;
 
-function CreateNewVirtualFileController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewVirtualFileController(QRouterItem: TOneRouterWorkItem): TObject;
 var
   lController: TOneVirtualFileController;
 begin
@@ -176,7 +176,7 @@ begin
     result.ResultMsg := '服务端文件不存在请检查';
     exit;
   end;
-  lFileStream := TFileStream.Create(lFileName, fmopenRead and fmShareDenyWrite);
+  lFileStream := TFileStream.Create(lFileName, fmopenRead and fmShareDenyRead);
   try
     // 大于10M文件,请用分块下载
     if lFileStream.Size > 1024 * 1024 * 10 then

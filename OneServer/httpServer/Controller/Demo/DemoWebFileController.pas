@@ -18,7 +18,7 @@ type
 
 implementation
 
-function CreateNewDemoWebFileController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewDemoWebFileController(QRouterItem: TOneRouterWorkItem): TObject;
 var
   lController: TDemoWebFileController;
 begin
@@ -59,9 +59,11 @@ begin
   for i := 0 to QFormData.Files.count - 1 do
   begin
     lWebRequestFile := TOneRequestFile(QFormData.Files.items[i]);
-    result.ResultData := result.ResultData + '当前接收到文件参数[' + lWebRequestFile.FieldName + ']' + '文件名称[' +Utf8Decode( lWebRequestFile.fileName) + ']' + #10#13;
+    result.ResultData := result.ResultData + '当前接收到文件参数[' + lWebRequestFile.FieldName + ']' + '文件名称[' + Utf8Decode(lWebRequestFile.fileName) + ']' + #10#13;
     // 文件流 ,至于要咱样是业务问题
     tempStream := TCustomMemoryStream(lWebRequestFile.Stream);
+    tempStream.Position := 0;
+    tempStream.SaveToFile(lWebRequestFile.fileName);
   end;
   // 接收到的参数,自已的业务自已分析
   for i := 0 to QFormData.ContentFields.count - 1 do

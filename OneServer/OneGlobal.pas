@@ -6,10 +6,8 @@ interface
 uses
   System.SysUtils, System.IOUtils, System.Generics.Collections, System.Classes,
   System.JSON, Rest.JSON, System.NetEncoding,
-  OneHttpServer, OneZTManage, OneFileHelper,
-  OneNeonHelper, OneTokenManage, OneVirtualFile,
-  Neon.Core.Persistence, Neon.Core.Persistence.JSON,
-  OneILog, OneLog;
+  OneHttpServer, OneZTManage, OneFileHelper, OneNeonHelper, OneTokenManage, OneVirtualFile,
+  Neon.Core.Persistence, Neon.Core.Persistence.JSON, OneILog, OneLog, OneWebSocketServer;
 
 type
 
@@ -25,6 +23,19 @@ type
     FWinTaskStart: boolean; // win随开机任务启动,无界面
     FWinRegisterStart: boolean; // win随开机进入界面启动,注册表方式
     FSuperAdminPass: string;
+    //
+    FIsHttps: boolean;
+    FHttpsPort: Integer;
+    FCertificateFile: string;
+    FPrivateKeyFile: string;
+    FCACertificatesFile: string;
+    FPrivateKeyPassword: string;
+    //
+    FIsWs: boolean;
+    FWsAutoStart: boolean;
+    FWsPort: Integer;
+    FWsPool: Integer;
+    FWsQueue: Integer;
   public
     constructor Create;
   public
@@ -37,6 +48,19 @@ type
     property WinTaskStart: boolean read FWinTaskStart write FWinTaskStart;
     property WinRegisterStart: boolean read FWinRegisterStart write FWinRegisterStart;
     property SuperAdminPass: string read FSuperAdminPass write FSuperAdminPass;
+    //
+    property IsHttps: boolean read FIsHttps write FIsHttps;
+    property HttpsPort: Integer read FHttpsPort write FHttpsPort;
+    property CertificateFile: string read FCertificateFile write FCertificateFile;
+    property PrivateKeyFile: string read FPrivateKeyFile write FPrivateKeyFile;
+    property CACertificatesFile: string read FCACertificatesFile write FCACertificatesFile;
+    property PrivateKeyPassword: string read FPrivateKeyPassword write FPrivateKeyPassword;
+    //
+    property IsWebSocket: boolean read FIsWs write FIsWs;
+    property WsAutoStart: boolean read FWsAutoStart write FWsAutoStart;
+    property WsPort: Integer read FWsPort write FWsPort;
+    property WsPool: Integer read FWsPool write FWsPool;
+    property WsQueue: Integer read FWsQueue write FWsQueue;
   end;
 
   TOneGlobal = class
@@ -56,14 +80,16 @@ type
     FVirtualSet: TOneVirtualSet;
     // HTT服务
     FHTTPServer: TOneHttpServer;
+    FWsServer: TOneWebSocketServer;
     // 账套管理服务
     FZTManage: TOneZTManage;
     // TOken管理服务
     FTokenManage: TOneTokenManage;
     //
     FVirtualManage: TOneVirtualManage;
+    FIsConsole: boolean;
   public
-    class function GetInstance(): TOneGlobal; static;
+    class function GetInstance(QIsConsole: boolean = false): TOneGlobal; static;
   public
     constructor Create();
     destructor Destroy; override;
@@ -86,14 +112,15 @@ type
     property ZTMangeSet: TOneZTMangeSet read FZTMangeSet;
     property VirtualSet: TOneVirtualSet read FVirtualSet;
     property HttpServer: TOneHttpServer read FHTTPServer;
+    property WsServer: TOneWebSocketServer read FWsServer;
     property Log: IOneLog read FLog;
     property ZTManage: TOneZTManage read FZTManage;
     property TokenManage: TOneTokenManage read FTokenManage;
     property VirtualManage: TOneVirtualManage read FVirtualManage;
+    property IsConsole: boolean read FIsConsole;
   end;
 
 var
-  Unit_OneGlobal: TOneGlobal;
   const_OnePlatform: string = 'OnePlatform';
   const_OneSet: string = 'OneSet';
 
@@ -101,19 +128,27 @@ implementation
 
 uses OneOrm, OneSQLCrypto;
 
+var
+  Unit_OneGlobal: TOneGlobal;
+
 constructor TOneServerSet.Create;
 begin
   inherited Create;
   FHTTPPort := 9090;
   FHTTPPool := 32;
   FHTTPQueue := 1000;
+  FIsHttps := false;
+  FHttpsPort := 9095;
+  FIsWs := false;
+  FWsPort := 9099;
 end;
 
-class function TOneGlobal.GetInstance(): TOneGlobal;
+class function TOneGlobal.GetInstance(QIsConsole: boolean = false): TOneGlobal;
 begin
   if Unit_OneGlobal = nil then
   begin
     Unit_OneGlobal := TOneGlobal.Create;
+    Unit_OneGlobal.FIsConsole := QIsConsole;
   end;
   result := Unit_OneGlobal;
 end;
@@ -139,6 +174,7 @@ begin
   // 日志最先工作的
   lOneLog.StarWork;
   self.FLog := lOneLog;
+  self.FLog._AddRef;
   // 加载HTTP配置
   self.LoadServerSet();
   // 加载账套配置
@@ -147,9 +183,11 @@ begin
   self.LoadVirtualSet();
   // 服务实例化
   FHTTPServer := TOneHttpServer.Create(self.FLog);
+  FWsServer := TOneWebSocketServer.Create(self.FLog);
   FZTManage := TOneZTManage.Create(self.FLog);
-
+  OneZTManage.Unit_ZTManage := FZTManage;
   FTokenManage := TOneTokenManage.Create(self.FLog);
+  FTokenManage.TokenTimeOutSec := self.FServerSet.FTokenIntervalSec;
   FVirtualManage := TOneVirtualManage.Create();
   // 给ORM提供ZT取数据功能
   OneOrm.unit_OrmZTManage := self.FZTManage;
@@ -168,6 +206,10 @@ begin
   begin
     FHTTPServer.Free;
   end;
+  if FWsServer <> nil then
+  begin
+    FWsServer.Free;
+  end;
   if FZTManage <> nil then
   begin
     FZTManage.Free;
@@ -181,7 +223,11 @@ begin
     FVirtualManage.Free;
   end;
   if FLog <> nil then
+  begin
     FLog.StopWork;
+    FLog._Release;
+    FLog._Release;
+  end;
   inherited Destroy;
 end;
 
@@ -221,6 +267,8 @@ begin
     // 临时存储数据的
     lListPath.Add('OneDataTemp');
     lListPath.Add('OneWeb');
+    // 更新目录
+    lListPath.Add('OneFastUpload');
     // 以下多是驱动的目录
     lListPath.Add(const_OraOciDll32);
     lListPath.Add(const_OraOciDll64);
@@ -302,18 +350,29 @@ function TOneGlobal.StarWork(var QErrMsg: string): boolean;
 begin
   result := false;
   QErrMsg := '';
-
+  if self.IsConsole then
+    writeln('**启动账套**');
   if FZTManage <> nil then
   begin
     if FZTMangeSet.AutoWork then
     begin
       // 开启添加账套
       FZTManage.StarWork(FZTMangeSet.ZTSetList, QErrMsg);
+      if self.IsConsole then
+        writeln('启动账套成功');
+    end
+    else
+    begin
+      if self.IsConsole then
+        writeln('账套未启动,原因账套设置不是自启动');
     end;
   end;
-
+  if self.IsConsole then
+    writeln('**启动HTTP服务**');
   if FHTTPServer <> nil then
   begin
+    if self.IsConsole then
+      writeln('HTTP端口:' + IntToStr(FServerSet.FHTTPPort));
     FHTTPServer.Port := FServerSet.FHTTPPort;
     FHTTPServer.ThreadPoolCount := FServerSet.FHTTPPool;
     FHTTPServer.HttpQueueLength := FServerSet.FHTTPQueue;
@@ -322,9 +381,49 @@ begin
       if not FHTTPServer.ServerStart then
       begin
         QErrMsg := FHTTPServer.ErrMsg;
+        if self.IsConsole then
+          writeln('启动HTTP异常原因:' + QErrMsg);
+      end
+      else
+      begin
+        if self.IsConsole then
+          writeln('启动HTTP服务成功');
       end;
+    end
+    else
+    begin
+      if self.IsConsole then
+        writeln('HTTP服务未启动,原因HTTP服务设置不是自启动');
     end;
   end;
+  if self.FWsServer <> nil then
+  begin
+    if self.IsConsole then
+      writeln('WebSocket端口:' + IntToStr(FServerSet.FWsPort));
+    self.FWsServer.Port := FServerSet.FWsPort;
+    self.FWsServer.ThreadPoolCount := FServerSet.FWsPool;
+    self.FWsServer.HttpQueueLength := FServerSet.FWsQueue;
+    if FServerSet.FWsAutoStart then
+    begin
+      if not FWsServer.ServerStart then
+      begin
+        QErrMsg := FWsServer.ErrMsg;
+        if self.IsConsole then
+          writeln('启动Ws异常原因:' + QErrMsg);
+      end
+      else
+      begin
+        if self.IsConsole then
+          writeln('启动Ws服务成功');
+      end;
+    end
+    else
+    begin
+      if self.IsConsole then
+        writeln('Ws服务未启动,原因Ws服务设置不是自启动');
+    end;
+  end;
+
   if FVirtualManage <> nil then
   begin
     FVirtualManage.StarWork(self.FVirtualSet.VirtualSetList);
@@ -383,6 +482,7 @@ begin
   end;
   //
   FHTTPServer.Port := FServerSet.FHTTPPort;
+  FHTTPServer.HttpsPort := FServerSet.FHttpsPort;
   FHTTPServer.ThreadPoolCount := FServerSet.FHTTPPool;
   FHTTPServer.HttpQueueLength := FServerSet.FHTTPQueue;
   if not FHTTPServer.ServerStart then

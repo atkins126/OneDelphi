@@ -18,6 +18,9 @@ type
     function ExecStored(QDataOpen: TOneDataOpen): TOneDataResult;
     // 保存语句或执行DML语句
     function SaveDatas(QSaveDMLDatas: TList<TOneDataSaveDML>): TOneDataResult;
+
+    { 执行脚本,不返回任何数据集或什么,纯脚本执行 }
+    function ExecScript(QDataOpen: TOneDataOpen): TActionResult<string>;
     // 下载文件
     function DownLoadDataFile(fileID: string): TActionResult<string>;
     // 删除文件
@@ -33,15 +36,18 @@ type
     function CommitTranItem(QTranInfo: TOneTran): TOneDataResult;
     // 5.回滚账套连接事务
     function RollbackTranItem(QTranInfo: TOneTran): TOneDataResult;
+
+    // 获取数据库表信息相
+    function GetDBMetaInfo(QDBMetaInfo: TOneDBMetaInfo): TOneDataResult;
   end;
 
-function CreateNewOneDataController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewOneDataController(QRouterItem: TOneRouterWorkItem): TObject;
 
 implementation
 
 uses OneGlobal, OneSQLCrypto;
 
-function CreateNewOneDataController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewOneDataController(QRouterItem: TOneRouterWorkItem): TObject;
 var
   lController: TOneDataController;
 begin
@@ -57,30 +63,34 @@ begin
   result := lController;
 end;
 
-function TOneDataController.OpenDatas(QDataOpens: TList<TOneDataOpen>)
-  : TOneDataResult;
+function TOneDataController.OpenDatas(QDataOpens: TList<TOneDataOpen>): TOneDataResult;
 var
   lOneGlobal: TOneGlobal;
   i: Integer;
 begin
   result := TOneDataResult.Create;
-  lOneGlobal := TOneGlobal.GetInstance();
-
-  for i := 0 to QDataOpens.Count - 1 do
-  begin
-    // 客户端提交的 SQL还原
-    QDataOpens[i].OpenSQL := OneSQLCrypto.SwapDecodeCrypto
-      (QDataOpens[i].OpenSQL);
-  end;
-  // 打开数据
-  if not lOneGlobal.ZTManage.OpenDatas(QDataOpens, result) then
-  begin
-    exit;
-  end;
-  // 解析相关数据
-  if result.ResultOK then
-  begin
-    result.DoResultitems();
+  try
+    lOneGlobal := TOneGlobal.GetInstance();
+    for i := 0 to QDataOpens.Count - 1 do
+    begin
+      // 客户端提交的 SQL还原
+      QDataOpens[i].OpenSQL := OneSQLCrypto.SwapDecodeCrypto(QDataOpens[i].OpenSQL);
+    end;
+    // 打开数据
+    if not lOneGlobal.ZTManage.OpenDatas(QDataOpens, result) then
+    begin
+      exit;
+    end;
+    // 解析相关数据
+    if result.ResultOK then
+    begin
+      result.DoResultitems();
+    end;
+  except
+    on e: Exception do
+    begin
+      result.ResultMsg := e.Message;
+    end;
   end;
 end;
 
@@ -103,29 +113,36 @@ begin
   end;
 end;
 
-function TOneDataController.SaveDatas(QSaveDMLDatas: TList<TOneDataSaveDML>)
-  : TOneDataResult;
+function TOneDataController.SaveDatas(QSaveDMLDatas: TList<TOneDataSaveDML>): TOneDataResult;
 var
   lOneGlobal: TOneGlobal;
   i: Integer;
 begin
   result := TOneDataResult.Create;
-  lOneGlobal := TOneGlobal.GetInstance();
-  for i := 0 to QSaveDMLDatas.Count - 1 do
-  begin
-    // 客户端提交的 SQL还原
-    QSaveDMLDatas[i].SQL := OneSQLCrypto.SwapDecodeCrypto(QSaveDMLDatas[i].SQL);
+  try
+    lOneGlobal := TOneGlobal.GetInstance();
+    for i := 0 to QSaveDMLDatas.Count - 1 do
+    begin
+      // 客户端提交的 SQL还原
+      QSaveDMLDatas[i].SQL := OneSQLCrypto.SwapDecodeCrypto(QSaveDMLDatas[i].SQL);
+    end;
+    // 保存数据
+    if not lOneGlobal.ZTManage.SaveDatas(QSaveDMLDatas, result) then
+    begin
+      exit;
+    end;
+    // 解析相关数据
+    if result.ResultOK then
+    begin
+      result.DoResultitems();
+    end;
+  except
+    on e: Exception do
+    begin
+      result.ResultMsg := e.Message;
+    end;
   end;
-  // 保存数据
-  if not lOneGlobal.ZTManage.SaveDatas(QSaveDMLDatas, result) then
-  begin
-    exit;
-  end;
-  // 解析相关数据
-  if result.ResultOK then
-  begin
-    result.DoResultitems();
-  end;
+
 end;
 
 // 下载文件
@@ -139,8 +156,7 @@ begin
     result.ResultMsg := '文件ID为空';
     exit;
   end;
-  lFileName := OneFileHelper.CombineExeRunPath('OnePlatform\OneDataTemp\' +
-    fileID + '.zip');
+  lFileName := OneFileHelper.CombineExeRunPath('OnePlatform\OneDataTemp\' + fileID + '.zip');
   if not fileExists(lFileName) then
   begin
     result.ResultMsg := '文件已不存在';
@@ -159,8 +175,7 @@ begin
   begin
     exit;
   end;
-  lFileName := OneFileHelper.CombineExeRunPath('OnePlatform\OneDataTemp\' +
-    fileID + '.data');
+  lFileName := OneFileHelper.CombineExeRunPath('OnePlatform\OneDataTemp\' + fileID + '.data');
   if fileExists(lFileName) then
   begin
     DeleteFile(lFileName);
@@ -180,8 +195,7 @@ begin
   lTranID := '';
   if QTranInfo.MaxSpan <= 0 then
     QTranInfo.MaxSpan := -1;
-  lTranID := lOneGlobal.ZTManage.LockTranItem(QTranInfo.ZTCode,
-    QTranInfo.MaxSpan, lErrMsg);
+  lTranID := lOneGlobal.ZTManage.LockTranItem(QTranInfo.ZTCode, QTranInfo.MaxSpan, lErrMsg);
   result.ResultMsg := lErrMsg;
   if lTranID <> '' then
   begin
@@ -260,8 +274,7 @@ begin
 end;
 
 // 5.回滚账套连接事务
-function TOneDataController.RollbackTranItem(QTranInfo: TOneTran)
-  : TOneDataResult;
+function TOneDataController.RollbackTranItem(QTranInfo: TOneTran): TOneDataResult;
 var
   lOneGlobal: TOneGlobal;
   lErrMsg: string;
@@ -283,11 +296,57 @@ begin
   result.ResultOK := true;
 end;
 
+// 获取数据库表信息相
+function TOneDataController.GetDBMetaInfo(QDBMetaInfo: TOneDBMetaInfo): TOneDataResult;
+var
+  lOneGlobal: TOneGlobal;
+  i: Integer;
+begin
+  result := TOneDataResult.Create;
+  lOneGlobal := TOneGlobal.GetInstance();
+  // 打开数据
+  if not lOneGlobal.ZTManage.GetDBMetaInfo(QDBMetaInfo, result) then
+  begin
+    exit;
+  end;
+  // 解析相关数据
+  if result.ResultOK then
+  begin
+    result.DoResultitems();
+  end;
+end;
+
+function TOneDataController.ExecScript(QDataOpen: TOneDataOpen): TActionResult<string>;
+var
+  lOneGlobal: TOneGlobal;
+  i: Integer;
+  lErrMsg: string;
+begin
+  result := TActionResult<string>.Create(false, false);
+  try
+    lOneGlobal := TOneGlobal.GetInstance();
+    QDataOpen.OpenSQL := OneSQLCrypto.SwapDecodeCrypto(QDataOpen.OpenSQL);
+    // 打开数据
+    if not lOneGlobal.ZTManage.ExecScript(QDataOpen, lErrMsg) then
+    begin
+      result.ResultMsg := lErrMsg;
+      exit;
+    end;
+    // 解析相关数据
+    result.ResultData := '执行脚本成功';
+    result.SetResultTrue;
+  except
+    on e: Exception do
+    begin
+      result.ResultMsg := e.Message;
+    end;
+  end;
+end;
+
 initialization
 
 // 单例模式注册
-OneHttpRouterManage.GetInitRouterManage().AddHTTPSingleWork('OneServer/Data',
-  TOneDataController, 0, CreateNewOneDataController);
+OneHttpRouterManage.GetInitRouterManage().AddHTTPSingleWork('OneServer/Data', TOneDataController, 0, CreateNewOneDataController);
 
 finalization
 

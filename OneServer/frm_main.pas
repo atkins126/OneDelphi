@@ -14,7 +14,8 @@ uses
   FireDAC.VCLUI.Login, FireDAC.Comp.UI, FireDAC.Stan.Pool, FireDAC.Stan.Async,
   FireDAC.Phys.MSSQL, FireDAC.Phys.MSSQLDef, FireDAC.VCLUI.ConnEdit, OneLog,
   Vcl.Menus, OneFileHelper, Winapi.ShellAPI, OneHttpRouterManage, Vcl.Buttons,
-  FireDAC.DApt;
+  FireDAC.DApt, System.Net.URLClient, System.Net.HttpClient,
+  System.Net.HttpClientComponent;
 
 type
   TfrmMain = class(TForm)
@@ -171,9 +172,30 @@ type
     chWinRegisterStart: TCheckBox;
     Label12: TLabel;
     edTokenOutSec: TEdit;
-    FDMetaInfoQuery1: TFDMetaInfoQuery;
     Label13: TLabel;
     edSuperAdminPass: TEdit;
+    edHttps: TCheckBox;
+    lbCertificateFile: TLabel;
+    edCertificateFile: TEdit;
+    Label15: TLabel;
+    edPrivateKeyFile: TEdit;
+    Label16: TLabel;
+    edPrivateKeyPassword: TEdit;
+    Label17: TLabel;
+    edCACertificatesFile: TEdit;
+    Label14: TLabel;
+    edHTTPSPort: TEdit;
+    checkWS: TCheckBox;
+    Label18: TLabel;
+    edWSPort: TEdit;
+    Label19: TLabel;
+    edWsThreadPool: TEdit;
+    Label20: TLabel;
+    edWsQueue: TEdit;
+    checkWsAutoStart: TCheckBox;
+    edSendMsgTest: TEdit;
+    Label21: TLabel;
+    tbSendMsg: TButton;
     procedure FormCreate(Sender: TObject);
     procedure tbStartClick(Sender: TObject);
     procedure tbStopClick(Sender: TObject);
@@ -212,6 +234,7 @@ type
     procedure BtnResClick(Sender: TObject);
     procedure chWinTaskStartClick(Sender: TObject);
     procedure chWinRegisterStartClick(Sender: TObject);
+    procedure tbSendMsgClick(Sender: TObject);
   private
     { Private declarations }
     FIsClose: boolean;
@@ -233,13 +256,14 @@ implementation
 
 {$R *.dfm}
 
-uses OneGlobal, OneZTManage, OneGUID, OneVirtualFile, OneTokenManage, OneWinReg;
+
+uses OneGlobal, OneZTManage, OneGUID, OneVirtualFile, OneTokenManage, OneWinReg, OneWebSocketServer;
 
 procedure TfrmMain.tbRouterSelectClick(Sender: TObject);
 var
   lRouterManage: TOneRouterManage;
-  lRouterItems: TDictionary<string, TOneRouterItem>;
-  lRouterItem: TOneRouterItem;
+  lRouterItems: TDictionary<string, TOneRouterWorkItem>;
+  lRouterItem: TOneRouterWorkItem;
 begin
   if qryRouter.Active then
     qryRouter.Close;
@@ -350,6 +374,19 @@ begin
   chWinTaskStart.Checked := lOneGlobal.ServerSet.WinTaskStart;
   chWinRegisterStart.Checked := lOneGlobal.ServerSet.WinRegisterStart;
   edSuperAdminPass.Text := lOneGlobal.ServerSet.SuperAdminPass;
+  // ssl
+  edHttps.Checked := lOneGlobal.ServerSet.IsHttps;
+  edHTTPSPort.Text := lOneGlobal.ServerSet.HTTPsPort.ToString;
+  edCertificateFile.Text := lOneGlobal.ServerSet.CertificateFile;
+  edPrivateKeyFile.Text := lOneGlobal.ServerSet.PrivateKeyFile;
+  edPrivateKeyPassword.Text := lOneGlobal.ServerSet.PrivateKeyPassword;
+  edCACertificatesFile.Text := lOneGlobal.ServerSet.CACertificatesFile;
+  // ws
+  checkWS.Checked := lOneGlobal.ServerSet.IsWebSocket;
+  edWSPort.Text := lOneGlobal.ServerSet.WsPort.ToString;
+  edWsThreadPool.Text := lOneGlobal.ServerSet.WsPool.ToString;
+  edWsQueue.Text := lOneGlobal.ServerSet.WsQueue.ToString;
+  checkWsAutoStart.Checked := lOneGlobal.ServerSet.WsAutoStart;
   // 账套自动工作
   edZTAutoStart.Checked := lOneGlobal.ZTMangeSet.AutoWork;
   // 日记配置加载
@@ -364,9 +401,9 @@ begin
   //
   self.OpenZTPool();
   if lOneGlobal.HttpServer.Started then
-    lbServerHint.Caption := 'HTTP运行状态:端口[' + lOneGlobal.HttpServer.Port.ToString + '],状态[启动]'
+    lbServerHint.Caption := 'HTTP运行状态:端口[' + lOneGlobal.HttpServer.port.ToString + '],状态[启动]'
   else
-    lbServerHint.Caption := 'HTTP运行状态:端口[' + lOneGlobal.HttpServer.Port.ToString + '],状态[未启动]';
+    lbServerHint.Caption := 'HTTP运行状态:端口[' + lOneGlobal.HttpServer.port.ToString + '],状态[未启动]';
   if OneHttpRouterManage.GetInitRouterManage().ErrMsg <> '' then
   begin
     lbServerHint.Caption := lbServerHint.Caption + ';路由注册状态[错误]';
@@ -561,7 +598,7 @@ var
   lOneGlobal: TOneGlobal;
 begin
   lOneGlobal := TOneGlobal.GetInstance();
-  if not self.YesNoMsg('HTTP服务', '当前禁止HTTP服务端口' + lOneGlobal.HttpServer.Port.ToString()) then
+  if not self.YesNoMsg('HTTP服务', '当前禁止HTTP服务端口' + lOneGlobal.HttpServer.port.ToString()) then
   begin
     exit;
   end;
@@ -616,6 +653,49 @@ begin
   //
   lOneGlobal.ServerSet.WinTaskStart := chWinTaskStart.Checked;
   lOneGlobal.ServerSet.WinRegisterStart := chWinRegisterStart.Checked;
+  // ssl
+  lOneGlobal.ServerSet.IsHttps := edHttps.Checked;
+  if edHttps.Checked then
+  begin
+    tempStr := edHTTPSPort.Text;
+    if not tryStrToInt(tempStr, lPort) then
+    begin
+      showMessage('请输入正确的HTTPS端口');
+      exit;
+    end;
+    lOneGlobal.ServerSet.HTTPsPort := lPort;
+  end;
+
+  lOneGlobal.ServerSet.CertificateFile := edCertificateFile.Text;
+  lOneGlobal.ServerSet.PrivateKeyFile := edPrivateKeyFile.Text;
+  lOneGlobal.ServerSet.PrivateKeyPassword := edPrivateKeyPassword.Text;
+  lOneGlobal.ServerSet.CACertificatesFile := edCACertificatesFile.Text;
+  // ws
+  lOneGlobal.ServerSet.IsWebSocket := checkWS.Checked;
+  tempStr := edWSPort.Text;
+  if not tryStrToInt(tempStr, lPort) then
+  begin
+    showMessage('请输入正确的Ws端口');
+    exit;
+  end;
+  lOneGlobal.ServerSet.WsPort := lPort;
+
+  tempStr := edWsThreadPool.Text;
+  if not tryStrToInt(tempStr, lPool) then
+  begin
+    showMessage('请输入正确的Ws线程数');
+    exit;
+  end;
+  lOneGlobal.ServerSet.WsPool := lPool;
+
+  tempStr := edWsQueue.Text;
+  if not tryStrToInt(tempStr, lQueue) then
+  begin
+    showMessage('请输入正确的Ws队列数');
+    exit;
+  end;
+  lOneGlobal.ServerSet.WsQueue := lQueue;
+  lOneGlobal.ServerSet.WsAutoStart := checkWsAutoStart.Checked;
   //
   tempStr := edTokenOutSec.Text;
   if not tryStrToInt(tempStr, lTokenSec) then
@@ -661,6 +741,26 @@ begin
   end;
 end;
 
+procedure TfrmMain.tbSendMsgClick(Sender: TObject);
+var
+  lOneGlobal: TOneGlobal;
+  lWsServer: TOneWebSocketServer;
+begin
+  //
+  if edSendMsgTest.Text = '' then
+  begin
+    showMessage('未输入任何消息!');
+    exit;
+  end;
+  lWsServer := TOneGlobal.GetInstance().WsServer;
+  if not lWsServer.Started then
+  begin
+    showMessage('WS服务未启动!');
+    exit;
+  end;
+  lWsServer.SendMsgAll(edSendMsgTest.Text);
+end;
+
 procedure TfrmMain.tbStartClick(Sender: TObject);
 var
   lOneGlobal: TOneGlobal;
@@ -674,7 +774,7 @@ begin
   try
     if lOneGlobal.HTTPServerStart(lErrMsg) then
     begin
-      showMessage('启动服务成功,当前启动HTTP服务端口:' + lOneGlobal.HttpServer.Port.ToString);
+      showMessage('启动服务成功,当前启动HTTP服务端口:' + lOneGlobal.HttpServer.port.ToString);
     end
     else
     begin
@@ -682,9 +782,9 @@ begin
     end;
   finally
     if lOneGlobal.HttpServer.Started then
-      lbServerHint.Caption := 'HTTP运行状态:端口[' + lOneGlobal.HttpServer.Port.ToString + '],状态[启动]'
+      lbServerHint.Caption := 'HTTP运行状态:端口[' + lOneGlobal.HttpServer.port.ToString + '],状态[启动]'
     else
-      lbServerHint.Caption := 'HTTP运行状态:端口[' + lOneGlobal.HttpServer.Port.ToString + '],状态[未启动]';
+      lbServerHint.Caption := 'HTTP运行状态:端口[' + lOneGlobal.HttpServer.port.ToString + '],状态[未启动]';
   end;
 end;
 
@@ -693,7 +793,7 @@ var
   lOneGlobal: TOneGlobal;
 begin
   lOneGlobal := TOneGlobal.GetInstance();
-  if not self.YesNoMsg('HTTP服务', '当前停止HTTP服务端口' + lOneGlobal.HttpServer.Port.ToString()) then
+  if not self.YesNoMsg('HTTP服务', '当前停止HTTP服务端口' + lOneGlobal.HttpServer.port.ToString()) then
   begin
     exit;
   end;
@@ -710,7 +810,7 @@ end;
 procedure TfrmMain.tbTokenSaveClick(Sender: TObject);
 var
   lOneGlobal: TOneGlobal;
-  lTokenItem: IOneTokenItem;
+  lTokenItem: TOneTokenItem;
 begin
   lOneGlobal := TOneGlobal.GetInstance();
   lOneGlobal.TokenManage.SaveToken;
@@ -720,7 +820,7 @@ end;
 procedure TfrmMain.tbTokenSelectClick(Sender: TObject);
 var
   lOneGlobal: TOneGlobal;
-  lTokenItem: IOneTokenItem;
+  lTokenItem: TOneTokenItem;
 begin
   qryToken.DisableControls;
   try

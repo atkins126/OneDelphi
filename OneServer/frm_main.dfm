@@ -3,36 +3,36 @@ object frmMain: TfrmMain
   Top = 0
   BorderIcons = [biSystemMenu, biMinimize]
   Caption = 'OneDelphi-'#20013#38388#20214
-  ClientHeight = 592
-  ClientWidth = 886
+  ClientHeight = 591
+  ClientWidth = 882
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -12
+  Font.Height = -15
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poOwnerFormCenter
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  TextHeight = 15
+  TextHeight = 20
   object pageMain: TPageControl
     Left = 0
     Top = 75
-    Width = 886
-    Height = 517
+    Width = 882
+    Height = 516
     ActivePage = tabServerReamk
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 882
-    ExplicitHeight = 516
+    ExplicitWidth = 878
+    ExplicitHeight = 515
     object tabServerReamk: TTabSheet
       Caption = #20013#38388#20214#35828#26126
       object Memo1: TMemo
         Left = 0
         Top = 0
-        Width = 878
-        Height = 487
+        Width = 874
+        Height = 481
         Align = alClient
         Lines.Strings = (
           'OneDelphi:'
@@ -55,22 +55,22 @@ object frmMain: TfrmMain
       object GroupBox2: TGroupBox
         Left = 0
         Top = 0
-        Width = 878
+        Width = 874
         Height = 249
         Align = alTop
         Caption = #24050#27491#30830#27880#20876#36335#30001#29366#24577#26597#30475
         TabOrder = 0
         object dbGridRouter: TDBGrid
           Left = 2
-          Top = 49
-          Width = 874
-          Height = 198
+          Top = 54
+          Width = 870
+          Height = 193
           Align = alClient
           DataSource = dsRouter
           TabOrder = 0
           TitleFont.Charset = DEFAULT_CHARSET
           TitleFont.Color = clWindowText
-          TitleFont.Height = -12
+          TitleFont.Height = -15
           TitleFont.Name = 'Segoe UI'
           TitleFont.Style = []
           Columns = <
@@ -112,8 +112,8 @@ object frmMain: TfrmMain
         end
         object Panel3: TPanel
           Left = 2
-          Top = 17
-          Width = 874
+          Top = 22
+          Width = 870
           Height = 32
           Align = alTop
           TabOrder = 1
@@ -131,8 +131,8 @@ object frmMain: TfrmMain
       object GroupBox6: TGroupBox
         Left = 0
         Top = 249
-        Width = 878
-        Height = 238
+        Width = 874
+        Height = 232
         Align = alClient
         Caption = #38169#35823#20449#24687
         Ctl3D = True
@@ -140,9 +140,9 @@ object frmMain: TfrmMain
         TabOrder = 1
         object edRouterErrMsg: TMemo
           Left = 2
-          Top = 17
-          Width = 874
-          Height = 219
+          Top = 22
+          Width = 870
+          Height = 208
           Align = alClient
           Lines.Strings = (
             #27880#20876#36335#30001#26080#38169#35823#20449#24687)
@@ -157,8 +157,8 @@ object frmMain: TfrmMain
       object groupHTTP: TGroupBox
         Left = 0
         Top = 0
-        Width = 878
-        Height = 183
+        Width = 874
+        Height = 217
         Align = alTop
         Caption = 'HTTP'#37197#32622'-'#20445#23384#37197#32622#22914#38656#29983#25928','#35831#37325#26032#21551#21160#20013#38388#23618
         Color = clBtnFace
@@ -171,7 +171,7 @@ object frmMain: TfrmMain
         ParentColor = False
         ParentFont = False
         TabOrder = 0
-        ExplicitWidth = 874
+        ExplicitWidth = 870
         object Label1: TLabel
           Left = 3
           Top = 56
@@ -195,24 +195,59 @@ object frmMain: TfrmMain
         end
         object lbConnectSecretkey: TLabel
           Left = 3
-          Top = 95
+          Top = 85
           Width = 52
           Height = 15
           Caption = #36830#25509#23494#38053
         end
         object Label12: TLabel
           Left = 443
-          Top = 95
+          Top = 85
           Width = 103
           Height = 15
           Caption = 'token'#22833#25928#38388#38548'('#31186')'
         end
         object Label13: TLabel
-          Left = 3
-          Top = 135
+          Left = 469
+          Top = 22
           Width = 52
           Height = 15
           Caption = #36229#31649#23494#30721
+        end
+        object lbCertificateFile: TLabel
+          Left = 3
+          Top = 150
+          Width = 72
+          Height = 15
+          Caption = 'CertificateFile'
+        end
+        object Label15: TLabel
+          Left = 419
+          Top = 150
+          Width = 73
+          Height = 15
+          Caption = 'PrivateKeyFile'
+        end
+        object Label16: TLabel
+          Left = 3
+          Top = 179
+          Width = 105
+          Height = 15
+          Caption = 'PrivateKeyPassword'
+        end
+        object Label17: TLabel
+          Left = 419
+          Top = 179
+          Width = 93
+          Height = 15
+          Caption = 'CACertificatesFile'
+        end
+        object Label14: TLabel
+          Left = 115
+          Top = 121
+          Width = 60
+          Height = 15
+          Caption = 'HTTPS'#31471#21475
         end
         object tbStart: TButton
           Left = 3
@@ -269,11 +304,11 @@ object frmMain: TfrmMain
           Text = '1000'
         end
         object edHTTPAutoStart: TCheckBox
-          Left = 721
-          Top = 93
+          Left = 697
+          Top = 56
           Width = 97
           Height = 17
-          Caption = #33258#21551#21160'HTTP'
+          Caption = #33258#21551#21160#26381#21153
           TabOrder = 6
         end
         object tbSaveHTTPSet: TButton
@@ -287,14 +322,14 @@ object frmMain: TfrmMain
         end
         object edConnectSecretkey: TEdit
           Left = 87
-          Top = 92
+          Top = 82
           Width = 290
           Height = 23
           TabOrder = 8
         end
         object tbBuildConnectSecretkey: TButton
           Left = 377
-          Top = 91
+          Top = 81
           Width = 54
           Height = 25
           Caption = #29983#25104
@@ -303,7 +338,7 @@ object frmMain: TfrmMain
         end
         object edTokenOutSec: TEdit
           Left = 552
-          Top = 92
+          Top = 82
           Width = 121
           Height = 23
           NumbersOnly = True
@@ -311,24 +346,69 @@ object frmMain: TfrmMain
           Text = '0'
         end
         object edSuperAdminPass: TEdit
-          Left = 87
-          Top = 132
-          Width = 290
+          Left = 552
+          Top = 19
+          Width = 242
           Height = 23
           PasswordChar = '*'
           TabOrder = 11
         end
+        object edHttps: TCheckBox
+          Left = 3
+          Top = 119
+          Width = 89
+          Height = 17
+          Caption = 'HTTPS'#25903#25345
+          TabOrder = 12
+        end
+        object edCertificateFile: TEdit
+          Left = 114
+          Top = 147
+          Width = 263
+          Height = 23
+          TabOrder = 13
+        end
+        object edPrivateKeyFile: TEdit
+          Left = 521
+          Top = 147
+          Width = 273
+          Height = 23
+          TabOrder = 14
+        end
+        object edPrivateKeyPassword: TEdit
+          Left = 114
+          Top = 176
+          Width = 263
+          Height = 23
+          TabOrder = 15
+        end
+        object edCACertificatesFile: TEdit
+          Left = 521
+          Top = 176
+          Width = 273
+          Height = 23
+          TabOrder = 16
+        end
+        object edHTTPSPort: TEdit
+          Left = 199
+          Top = 118
+          Width = 178
+          Height = 23
+          NumbersOnly = True
+          TabOrder = 17
+          Text = '9091'
+        end
       end
       object groupWebSocket: TGroupBox
         Left = 0
-        Top = 313
-        Width = 878
-        Height = 174
+        Top = 322
+        Width = 874
+        Height = 159
         Align = alClient
         Caption = #20854#23427#37197#32622
         TabOrder = 1
-        ExplicitWidth = 874
-        ExplicitHeight = 173
+        ExplicitWidth = 870
+        ExplicitHeight = 158
         object chWinTaskStart: TCheckBox
           Left = 15
           Top = 30
@@ -356,13 +436,100 @@ object frmMain: TfrmMain
       end
       object GroupBox1: TGroupBox
         Left = 0
-        Top = 183
-        Width = 878
-        Height = 130
+        Top = 217
+        Width = 874
+        Height = 105
         Align = alTop
         Caption = 'WebSocket(WS)'#37197#32622
         TabOrder = 2
-        ExplicitWidth = 874
+        ExplicitWidth = 870
+        object Label18: TLabel
+          Left = 246
+          Top = 35
+          Width = 54
+          Height = 20
+          Caption = 'WS'#31471#21475
+        end
+        object Label19: TLabel
+          Left = 10
+          Top = 68
+          Width = 80
+          Height = 20
+          Caption = #24037#20316#32447#31243#25968
+        end
+        object Label20: TLabel
+          Left = 246
+          Top = 68
+          Width = 64
+          Height = 20
+          Caption = #38431#21015#22823#23567
+        end
+        object Label21: TLabel
+          Left = 480
+          Top = 68
+          Width = 96
+          Height = 20
+          Caption = #24191#25773#28040#24687#27979#35797
+        end
+        object checkWS: TCheckBox
+          Left = 15
+          Top = 32
+          Width = 138
+          Height = 17
+          Caption = 'WebSocket'#24320#21551
+          TabOrder = 0
+        end
+        object edWSPort: TEdit
+          Left = 329
+          Top = 32
+          Width = 117
+          Height = 28
+          NumbersOnly = True
+          TabOrder = 1
+          Text = '9099'
+        end
+        object edWsThreadPool: TEdit
+          Left = 104
+          Top = 65
+          Width = 121
+          Height = 28
+          NumbersOnly = True
+          TabOrder = 2
+          Text = '100'
+        end
+        object edWsQueue: TEdit
+          Left = 329
+          Top = 65
+          Width = 121
+          Height = 28
+          NumbersOnly = True
+          TabOrder = 3
+          Text = '1000'
+        end
+        object checkWsAutoStart: TCheckBox
+          Left = 469
+          Top = 32
+          Width = 97
+          Height = 17
+          Caption = #33258#21551#21160#26381#21153
+          TabOrder = 4
+        end
+        object edSendMsgTest: TEdit
+          Left = 590
+          Top = 65
+          Width = 186
+          Height = 28
+          TabOrder = 5
+        end
+        object tbSendMsg: TButton
+          Left = 784
+          Top = 67
+          Width = 75
+          Height = 25
+          Caption = #21457#36865#28040#24687
+          TabOrder = 6
+          OnClick = tbSendMsgClick
+        end
       end
     end
     object tabZTManage: TTabSheet
@@ -371,15 +538,15 @@ object frmMain: TfrmMain
       object GroupBox3: TGroupBox
         Left = 0
         Top = 0
-        Width = 878
+        Width = 874
         Height = 263
         Align = alTop
         Caption = #36134#22871#37197#32622'-'#33258#21160#21152#36733#36134#22871#26410#25171#21246#26102','#38656#25163#21160#37325#36733#25152#26377
         TabOrder = 0
         object Panel1: TPanel
           Left = 2
-          Top = 17
-          Width = 874
+          Top = 22
+          Width = 870
           Height = 40
           Align = alTop
           BorderStyle = bsSingle
@@ -431,15 +598,15 @@ object frmMain: TfrmMain
         end
         object dbGridZTSet: TDBGrid
           Left = 2
-          Top = 57
-          Width = 874
-          Height = 204
+          Top = 62
+          Width = 870
+          Height = 199
           Align = alClient
           DataSource = dsZTSet
           TabOrder = 1
           TitleFont.Charset = DEFAULT_CHARSET
           TitleFont.Color = clWindowText
-          TitleFont.Height = -12
+          TitleFont.Height = -15
           TitleFont.Name = 'Segoe UI'
           TitleFont.Style = []
           OnDblClick = dbGridZTSetDblClick
@@ -504,15 +671,15 @@ object frmMain: TfrmMain
       object GroupBox4: TGroupBox
         Left = 0
         Top = 263
-        Width = 878
-        Height = 224
+        Width = 874
+        Height = 218
         Align = alClient
         Caption = #36134#22871#36816#34892#24773#20917
         TabOrder = 1
         object pnZTPool: TPanel
           Left = 2
-          Top = 17
-          Width = 874
+          Top = 22
+          Width = 870
           Height = 32
           Align = alTop
           TabOrder = 0
@@ -561,15 +728,15 @@ object frmMain: TfrmMain
         end
         object dbGridZTPool: TDBGrid
           Left = 2
-          Top = 49
-          Width = 874
-          Height = 173
+          Top = 54
+          Width = 870
+          Height = 162
           Align = alClient
           DataSource = dsZTPool
           TabOrder = 1
           TitleFont.Charset = DEFAULT_CHARSET
           TitleFont.Color = clWindowText
-          TitleFont.Height = -12
+          TitleFont.Height = -15
           TitleFont.Name = 'Segoe UI'
           TitleFont.Style = []
           OnDblClick = dbGridZTSetDblClick
@@ -631,7 +798,7 @@ object frmMain: TfrmMain
       object pnLogSet: TPanel
         Left = 0
         Top = 0
-        Width = 878
+        Width = 874
         Height = 84
         Align = alTop
         BorderStyle = bsSingle
@@ -639,36 +806,36 @@ object frmMain: TfrmMain
         object Label10: TLabel
           Left = 19
           Top = 16
-          Width = 215
-          Height = 15
+          Width = 265
+          Height = 20
           Caption = #25351#23450#30446#24405'('#20026#31354#40664#35748'OnePlatform'#30446#24405#65289
         end
         object Label11: TLabel
           Left = 19
           Top = 45
-          Width = 99
-          Height = 15
+          Width = 122
+          Height = 20
           Caption = #20889#20837#38388#38548#26102#38388'('#31186')'
         end
         object edLogPath: TEdit
           Left = 240
           Top = 13
-          Width = 337
-          Height = 23
+          Width = 361
+          Height = 28
           TabOrder = 0
         end
         object edLogSec: TEdit
-          Left = 124
+          Left = 147
           Top = 42
-          Width = 201
-          Height = 23
+          Width = 178
+          Height = 28
           TabOrder = 1
           Text = '10'
         end
         object edHTTPLog: TCheckBox
           Left = 345
           Top = 45
-          Width = 97
+          Width = 129
           Height = 17
           Caption = #24320#21551'HTTP'#26085#35760
           TabOrder = 2
@@ -676,7 +843,7 @@ object frmMain: TfrmMain
         object edSQLLog: TCheckBox
           Left = 480
           Top = 45
-          Width = 97
+          Width = 121
           Height = 17
           Caption = #24320#21551'SQL'#26085#35760
           TabOrder = 3
@@ -703,15 +870,15 @@ object frmMain: TfrmMain
       object GroupBox5: TGroupBox
         Left = 0
         Top = 84
-        Width = 878
-        Height = 403
+        Width = 874
+        Height = 397
         Align = alClient
         Caption = #21363#26102#26085#35760#26597#30475#12298#27809#20107#35831#20851#38381','#22823#37327#20889#25968#25454'UI'#20250#21345#12299
         TabOrder = 1
         object Panel2: TPanel
           Left = 2
-          Top = 17
-          Width = 874
+          Top = 22
+          Width = 870
           Height = 42
           Align = alTop
           BorderStyle = bsSingle
@@ -737,10 +904,11 @@ object frmMain: TfrmMain
         end
         object edLog: TMemo
           Left = 2
-          Top = 59
-          Width = 874
-          Height = 342
+          Top = 64
+          Width = 870
+          Height = 331
           Align = alClient
+          ScrollBars = ssBoth
           TabOrder = 1
         end
       end
@@ -751,12 +919,12 @@ object frmMain: TfrmMain
       object Panel4: TPanel
         Left = 0
         Top = 0
-        Width = 878
+        Width = 874
         Height = 41
         Align = alTop
         TabOrder = 0
         object tbTokenSelect: TButton
-          Left = 0
+          Left = 4
           Top = 8
           Width = 105
           Height = 25
@@ -774,7 +942,7 @@ object frmMain: TfrmMain
           OnClick = tbTokenDeleteClick
         end
         object tbTokenSave: TButton
-          Left = 256
+          Left = 235
           Top = 8
           Width = 105
           Height = 25
@@ -786,14 +954,14 @@ object frmMain: TfrmMain
       object gridToken: TDBGrid
         Left = 0
         Top = 41
-        Width = 878
-        Height = 446
+        Width = 874
+        Height = 440
         Align = alClient
         DataSource = dsToken
         TabOrder = 1
         TitleFont.Charset = DEFAULT_CHARSET
         TitleFont.Color = clWindowText
-        TitleFont.Height = -12
+        TitleFont.Height = -15
         TitleFont.Name = 'Segoe UI'
         TitleFont.Style = []
         Columns = <
@@ -909,7 +1077,7 @@ object frmMain: TfrmMain
       object plVirtualFile: TPanel
         Left = 0
         Top = 0
-        Width = 878
+        Width = 874
         Height = 41
         Align = alTop
         TabOrder = 0
@@ -953,14 +1121,14 @@ object frmMain: TfrmMain
       object grdVirtualFile: TDBGrid
         Left = 0
         Top = 41
-        Width = 878
-        Height = 446
+        Width = 874
+        Height = 440
         Align = alClient
         DataSource = dsVirtual
         TabOrder = 1
         TitleFont.Charset = DEFAULT_CHARSET
         TitleFont.Color = clWindowText
-        TitleFont.Height = -12
+        TitleFont.Height = -15
         TitleFont.Name = 'Segoe UI'
         TitleFont.Style = []
         Columns = <
@@ -1011,11 +1179,11 @@ object frmMain: TfrmMain
   object plTop: TPanel
     Left = 0
     Top = 0
-    Width = 886
+    Width = 882
     Height = 75
     Align = alTop
     TabOrder = 1
-    ExplicitWidth = 882
+    ExplicitWidth = 878
     object Image1: TImage
       Left = 1
       Top = 1
@@ -1089,7 +1257,7 @@ object frmMain: TfrmMain
     end
     object BtnRes: TBitBtn
       AlignWithMargins = True
-      Left = 643
+      Left = 639
       Top = 6
       Width = 112
       Height = 63
@@ -1106,11 +1274,11 @@ object frmMain: TfrmMain
       ParentFont = False
       TabOrder = 0
       OnClick = BtnResClick
-      ExplicitLeft = 639
+      ExplicitLeft = 635
     end
     object btnClose: TBitBtn
       AlignWithMargins = True
-      Left = 763
+      Left = 759
       Top = 6
       Width = 112
       Height = 63
@@ -1127,65 +1295,66 @@ object frmMain: TfrmMain
       ParentFont = False
       TabOrder = 1
       OnClick = HookCloseMainClick
-      ExplicitLeft = 759
+      ExplicitLeft = 755
     end
   end
   object plZTSet: TPanel
-    Left = 218
-    Top = 178
+    Left = 235
+    Top = 154
     Width = 401
     Height = 232
+    Caption = '9091'
     Color = clSkyBlue
     ParentBackground = False
     TabOrder = 2
     Visible = False
     object Label4: TLabel
-      Left = 40
+      Left = 35
       Top = 24
-      Width = 52
-      Height = 15
+      Width = 64
+      Height = 20
       Caption = #36134#22871#20195#30721
     end
     object Label5: TLabel
-      Left = 40
+      Left = 35
       Top = 53
-      Width = 52
-      Height = 15
+      Width = 64
+      Height = 20
       Caption = #36134#22871#26631#31614
     end
     object Label6: TLabel
-      Left = 40
+      Left = 35
       Top = 82
-      Width = 65
-      Height = 15
+      Width = 80
+      Height = 20
       Caption = #27744#21021#22987#25968#37327
     end
     object Label7: TLabel
-      Left = 40
+      Left = 35
       Top = 111
-      Width = 65
-      Height = 15
+      Width = 80
+      Height = 20
       Caption = #27744#26368#22823#25968#37327
     end
     object Label8: TLabel
-      Left = 40
+      Left = 35
       Top = 140
-      Width = 65
-      Height = 15
+      Width = 80
+      Height = 20
       Caption = #25968#25454#24211#31867#22411
     end
     object Label9: TLabel
-      Left = 40
+      Left = 35
       Top = 169
-      Width = 65
-      Height = 15
+      Width = 80
+      Height = 20
       Caption = #36830#25509#23383#31526#20018
     end
     object dbZTCode: TDBEdit
       Left = 120
       Top = 21
       Width = 233
-      Height = 23
+      Height = 28
       DataField = 'FZTCode'
       DataSource = dsZTSet
       TabOrder = 0
@@ -1194,7 +1363,7 @@ object frmMain: TfrmMain
       Left = 120
       Top = 50
       Width = 233
-      Height = 23
+      Height = 28
       DataField = 'FZTCaption'
       DataSource = dsZTSet
       TabOrder = 1
@@ -1203,7 +1372,7 @@ object frmMain: TfrmMain
       Left = 120
       Top = 79
       Width = 233
-      Height = 23
+      Height = 28
       DataField = 'FInitPoolCount'
       DataSource = dsZTSet
       TabOrder = 2
@@ -1212,7 +1381,7 @@ object frmMain: TfrmMain
       Left = 120
       Top = 108
       Width = 233
-      Height = 23
+      Height = 28
       DataField = 'FMaxPoolCount'
       DataSource = dsZTSet
       TabOrder = 3
@@ -1221,14 +1390,14 @@ object frmMain: TfrmMain
       Left = 120
       Top = 166
       Width = 233
-      Height = 23
+      Height = 28
       DataField = 'FConnectionStr'
       DataSource = dsZTSet
       TabOrder = 4
     end
     object tbZTConnectSet: TButton
-      Left = 352
-      Top = 165
+      Left = 359
+      Top = 168
       Width = 33
       Height = 25
       Caption = #35774#32622
@@ -1236,9 +1405,9 @@ object frmMain: TfrmMain
       OnClick = tbZTConnectSetClick
     end
     object dbIsEnable: TDBCheckBox
-      Left = 113
-      Top = 199
-      Width = 73
+      Left = 93
+      Top = 200
+      Width = 102
       Height = 17
       Caption = #26159#21542#21487#29992
       DataField = 'FIsEnable'
@@ -1247,7 +1416,7 @@ object frmMain: TfrmMain
     end
     object tbZTSetOK: TButton
       Left = 296
-      Top = 195
+      Top = 198
       Width = 89
       Height = 25
       Caption = #30830#23450
@@ -1256,7 +1425,7 @@ object frmMain: TfrmMain
     end
     object tbZTPing: TButton
       Left = 201
-      Top = 195
+      Top = 198
       Width = 89
       Height = 25
       Caption = #27979#35797#36830#25509
@@ -1264,7 +1433,7 @@ object frmMain: TfrmMain
       OnClick = tbZTPingClick
     end
     object dbIsMain: TDBCheckBox
-      Left = 40
+      Left = 4
       Top = 199
       Width = 73
       Height = 17
@@ -1277,7 +1446,7 @@ object frmMain: TfrmMain
       Left = 120
       Top = 136
       Width = 233
-      Height = 23
+      Height = 28
       DataField = 'FPhyDriver'
       DataSource = dsZTSet
       Enabled = False
@@ -1410,7 +1579,7 @@ object frmMain: TfrmMain
     UpdateOptions.CheckRequired = False
     UpdateOptions.AutoCommitUpdates = True
     Left = 636
-    Top = 253
+    Top = 293
     object qryVirtualFVirtualCode: TWideStringField
       FieldName = 'FVirtualCode'
       Size = 50
@@ -1432,8 +1601,8 @@ object frmMain: TfrmMain
   end
   object dsVirtual: TDataSource
     DataSet = qryVirtual
-    Left = 684
-    Top = 253
+    Left = 692
+    Top = 293
   end
   object qryRouter: TFDMemTable
     FetchOptions.AssignedValues = [evMode]
@@ -1476,8 +1645,8 @@ object frmMain: TfrmMain
     UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
     UpdateOptions.CheckRequired = False
     UpdateOptions.AutoCommitUpdates = True
-    Left = 612
-    Top = 373
+    Left = 644
+    Top = 421
     object qryTokenFConnectionID: TWideStringField
       FieldName = 'FConnectionID'
       Size = 50
@@ -1531,12 +1700,7 @@ object frmMain: TfrmMain
   end
   object dsToken: TDataSource
     DataSet = qryToken
-    Left = 668
-    Top = 373
-  end
-  object FDMetaInfoQuery1: TFDMetaInfoQuery
-    Connection = FDConnection1
-    Left = 476
-    Top = 500
+    Left = 700
+    Top = 413
   end
 end

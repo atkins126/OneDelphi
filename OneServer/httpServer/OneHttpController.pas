@@ -19,7 +19,7 @@ type
     { 是否支持跨域访问 }
     FbAllowOrigin: Boolean;
     { 当前调用的路由信息 }
-    FRouterItem: TOneRouterItem;
+    FRouterItem: TOneRouterWorkItem;
     // 验证模式
     FAutoCheckHeadAuthor: Boolean;
     // 是否自动校验 Token参数
@@ -45,7 +45,8 @@ type
     { 验证Token 签名 合法性 }
     function CheckSign(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult): Boolean; virtual;
     // 获取方法参数值   var QParamNewObjs: TList<Tobject>
-    function DoMethodGetParams(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult; QOneMethodRtti: TOneMethodRtti; QParamObjRttiList: TList<TRttiType>; QParamNewObjList: TList<TObject>; Var QErrMsg: string): TArray<TValue>;
+    function DoMethodGetParams(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult; QOneMethodRtti: TOneMethodRtti; QParamObjRttiList: TList<TRttiType>; QParamNewObjList: TList<TObject>;
+      Var QErrMsg: string): TArray<TValue>;
     { 执行相关方法 }
     procedure DoMethodFreeParams(QParamObjList: TList<TObject>; QParamObjRttiList: TList<TRttiType>);
     procedure DoMethod(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult; QParamNewObjList: TList<TObject>; QParamObjRttiList: TList<TRttiType>); virtual;
@@ -53,7 +54,7 @@ type
     procedure EndCodeResultOut(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult); virtual;
     //
     function CheckCureentToken(var QErrMsg: string): Boolean;
-    function GetCureentToken(var QErrMsg: string): IOneTokenItem;
+    function GetCureentToken(var QErrMsg: string): TOneTokenItem;
     function GetCureentHTTPCtxt(var QErrMsg: string): THTTPCtxt;
   protected
     // QCompact JSON是否紧密型的，默认是，减少传输量
@@ -63,11 +64,11 @@ type
     destructor Destroy; override;
     { 工作 }
     // function DoWork(Ctxt:THttpServerRequest;QWorkInfo:THTTPWorkInfo):cardinal;virtual;overload;
-    function DoWork(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult; QRouterItem: TOneRouterItem): cardinal; virtual;
+    function DoWork(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult; QRouterItem: TOneRouterWorkItem): cardinal; virtual;
   published
     // property AutoJsonResult:Boolean read FAutoJsonResult write FAutoJsonResult;
     property bAllowOrigin: Boolean read FbAllowOrigin write FbAllowOrigin;
-    property RouterItem: TOneRouterItem read FRouterItem write FRouterItem;
+    property RouterItem: TOneRouterWorkItem read FRouterItem write FRouterItem;
     property HTTPCtxt: THTTPCtxt read FHTTPCtxt write FHTTPCtxt;
     property HTTPResult: THTTPResult read FHTTPResult write FHTTPResult;
   end;
@@ -197,7 +198,7 @@ begin
   end;
 end;
 
-function TOneControllerBase.GetCureentToken(var QErrMsg: string): IOneTokenItem;
+function TOneControllerBase.GetCureentToken(var QErrMsg: string): TOneTokenItem;
 var
   lTokenID: string;
   lThreadID: TThreadID;
@@ -345,7 +346,7 @@ begin
   end;
 end;
 
-function TOneControllerBase.DoWork(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult; QRouterItem: TOneRouterItem): cardinal;
+function TOneControllerBase.DoWork(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult; QRouterItem: TOneRouterWorkItem): cardinal;
 var
   i: Integer;
   LParamNewObjList: TList<TObject>;
@@ -397,6 +398,7 @@ begin
           // URL包括Token的参数,对token进行验证
           if not self.CheckToken(QHTTPCtxt, QHTTPResult) then
           begin
+            QHTTPResult.ResultStatus := HTTP_Status_TokenFail;
             exit;
           end;
           if not self.CheckSign(QHTTPCtxt, QHTTPResult) then
@@ -415,6 +417,8 @@ begin
     except
       on e: Exception do
       begin
+        // 写入错误日志
+        TOneGlobal.GetInstance().Log.WriteLog('OneExcept', e.Message);
         QHTTPResult.ResultException := e.Message;
         QHTTPResult.ResultStatus := 500;
       end;
@@ -457,7 +461,8 @@ begin
 end;
 
 // ;var QParamNewObjs: TList<Tobject>
-function TOneControllerBase.DoMethodGetParams(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult; QOneMethodRtti: TOneMethodRtti; QParamObjRttiList: TList<TRttiType>; QParamNewObjList: TList<TObject>; Var QErrMsg: string): TArray<TValue>;
+function TOneControllerBase.DoMethodGetParams(QHTTPCtxt: THTTPCtxt; QHTTPResult: THTTPResult; QOneMethodRtti: TOneMethodRtti; QParamObjRttiList: TList<TRttiType>; QParamNewObjList: TList<TObject>;
+  Var QErrMsg: string): TArray<TValue>;
 var
   lArgs: TArray<TValue>;
   lParameters: TArray<TRttiParameter>;
@@ -468,6 +473,7 @@ var
   tempInt64: Int64;
   tempFloat: double;
   tempStr: string;
+  tempStrArr: TArray<string>;
   tempObj: TObject;
   tempTValue: TValue;
   lFormList: TStringList;
@@ -492,10 +498,11 @@ begin
     exit;
   setLength(lArgs, iParamLen);
   try
+
     //
     case QOneMethodRtti.HttpMethodType of
 
-      emOneHttpMethodMode.OneGet, emOneHttpMethodMode.OneUpload, emOneHttpMethodMode.OneDownload:
+      emOneHttpMethodMode.OneGet, emOneHttpMethodMode.OneDownload:
         begin
 {$REGION}
           // url获取参数,不能有类
@@ -584,7 +591,7 @@ begin
           // 判断是不是JSON格式
           if QHTTPCtxt.RequestInContent = '' then
           begin
-            QErrMsg := 'post提交无任何数据';
+            QErrMsg := '此接口需提供相关参数,当前POST提交的数据为空';
             exit;
           end;
           // 转成JSON参数
@@ -818,6 +825,69 @@ begin
           end;
 {$ENDREGION}
         end;
+      emOneHttpMethodMode.OnePath:
+        begin
+          // 分析Url获取参数
+          tempStr := QHTTPCtxt.URLPath.Substring(length(QOneMethodRtti.UrlMethod) + 1);
+          tempStrArr := SplitString(tempStr, '/');
+          if length(tempStrArr) <> QOneMethodRtti.paramCount then
+          begin
+            QErrMsg := 'Url路径参数与所需的函数参数个数不一至';
+            exit;
+          end;
+          for iParam := Low(lParameters) to High(lParameters) do
+          begin
+            lParam := lParameters[iParam];
+            // 获取参数值
+            tempStr := tempStrArr[iParam];
+            case lParam.ParamType.TypeKind of
+              tkInteger, tkInt64, tkFloat:
+                begin
+                  if lParam.ParamType.TypeKind = tkInteger then
+                  begin
+                    if tryStrToInt(tempStr, tempInt) then
+                    begin
+                      lArgs[iParam] := tempInt;
+                    end
+                    else
+                    begin
+                      QErrMsg := 'URL参数' + lParam.Name + '转化成整型出错';
+                      exit;
+                    end;
+                  end
+                  else if lParam.ParamType.TypeKind = tkInt64 then
+                  begin
+                    if tryStrToInt64(tempStr, tempInt64) then
+                    begin
+                      lArgs[iParam] := tempInt64;
+                    end
+                    else
+                    begin
+                      QErrMsg := 'URL参数' + lParam.Name + '转化成整型64出错';
+                      exit;
+                    end;
+                  end
+                  else if lParam.ParamType.TypeKind = tkFloat then
+                  begin
+                    if TryStrToFloat(tempStr, tempFloat) then
+                    begin
+                      lArgs[iParam] := tempFloat;
+                    end
+                    else
+                    begin
+                      QErrMsg := 'URL参数' + lParam.Name + '转化成小数出错';
+                      exit;
+                    end;
+                  end;
+                end;
+              tkString, tkUString, tkWChar, tkLString, tkWString, tkChar:
+                begin
+                  // 不存在这个参数会默认''
+                  lArgs[iParam] := tempStr;
+                end;
+            end;
+          end;
+        end;
       emOneHttpMethodMode.OneForm:
         begin
 {$REGION}
@@ -920,6 +990,7 @@ begin
     begin
       lJSonValue.Free;
     end;
+    tempStrArr := nil;
   end;
   Result := lArgs;
 end;
@@ -1067,7 +1138,7 @@ begin
             exit;
           end;
         end;
-      emOneHttpMethodMode.OnePost, emOneHttpMethodMode.OneForm, emOneHttpMethodMode.OneUpload:
+      emOneHttpMethodMode.OnePost, emOneHttpMethodMode.OneForm:
         begin
           if QHTTPCtxt.Method.ToUpper() <> 'POST' then
           begin
@@ -1083,7 +1154,15 @@ begin
     case lOneMethodRtti.MethodType of
       resultProcedure:
         begin
-          lOneMethodRtti.RttiMethod.Invoke(self, [QHTTPCtxt, QHTTPResult]);
+          try
+            lOneMethodRtti.RttiMethod.Invoke(self, [QHTTPCtxt, QHTTPResult]);
+          except
+            on e: Exception do
+            begin
+              QHTTPResult.ResultMsg := e.Message;
+              exit;
+            end;
+          end;
           isInvoke := true;
         end;
       sysProcedure, sysFunction:
@@ -1095,7 +1174,15 @@ begin
             exit;
           end;
           // 这边如果产生异常,会造成LValue未释放
-          LValue := lOneMethodRtti.RttiMethod.Invoke(self, lArgs);
+          try
+            LValue := lOneMethodRtti.RttiMethod.Invoke(self, lArgs);
+          except
+            on e: Exception do
+            begin
+              QHTTPResult.ResultMsg := e.Message;
+              exit;
+            end;
+          end;
           if (lOneMethodRtti.MethodType = sysProcedure) then
           begin
             exit;

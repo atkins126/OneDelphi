@@ -32,13 +32,13 @@ type
     function OneGetGoodsImg(imgid: string): TActionResult<string>;
   end;
 
-function CreateNewGoodsController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewGoodsController(QRouterItem: TOneRouterWorkItem): TObject;
 
 implementation
 
 uses OneGlobal, OneZTManage, OneFileHelper;
 
-function CreateNewGoodsController(QRouterItem: TOneRouterItem): TObject;
+function CreateNewGoodsController(QRouterItem: TOneRouterWorkItem): TObject;
 var
   lController: TUniGoodsController;
 begin
@@ -112,7 +112,7 @@ function TUniGoodsController.GetGoodsList(pageIndex: integer; pageSize: integer;
 var
   lZTItem: TOneZTItem;
   lFDQuery: TFDQuery;
-  lOneTokenItem: IOneTokenItem;
+  lOneTokenItem: TOneTokenItem;
   lOneZTMange: TOneZTManage;
   lOneTokenManage: TOneTokenManage;
   lGoodDemo: TGoodsDemo;
@@ -147,7 +147,8 @@ begin
       else
       begin
         // 相拟查询
-        lFDQuery.SQL.Text := 'select FGoodsID,FGoodsCode,FGoodsName,FGoodsPrice,FGoodsRemark,FGoodsImgUrl from demo_goods ' + ' where FGoodsCode like :goodInfo or FGoodsName like :goodInfo order by FGoodsCode ';
+        lFDQuery.SQL.Text := 'select FGoodsID,FGoodsCode,FGoodsName,FGoodsPrice,FGoodsRemark,FGoodsImgUrl from demo_goods ' +
+          ' where FGoodsCode like :goodInfo or FGoodsName like :goodInfo order by FGoodsCode ';
         lFDQuery.Params[0].AsString := '%' + goodInfo + '%';
       end;
       // 分页设置
@@ -188,7 +189,7 @@ function TUniGoodsController.GetGoodsListByJson(QJson: TJsonObject): TActionResu
 var
   lZTItem: TOneZTItem;
   lFDQuery: TFDQuery;
-  lOneTokenItem: IOneTokenItem;
+  lOneTokenItem: TOneTokenItem;
   lOneZTMange: TOneZTManage;
   lOneTokenManage: TOneTokenManage;
   lGoodDemo: TGoodsDemo;
@@ -227,7 +228,8 @@ begin
       else
       begin
         // 相拟查询
-        lFDQuery.SQL.Text := 'select  FGoodsID,FGoodsCode,FGoodsName,FGoodsPrice,FGoodsRemark,FGoodsImgUrl  from demo_goods ' + ' where FGoodsCode like :goodInfo or FGoodsName like :goodInfo order by FGoodsCode ';
+        lFDQuery.SQL.Text := 'select  FGoodsID,FGoodsCode,FGoodsName,FGoodsPrice,FGoodsRemark,FGoodsImgUrl  from demo_goods ' +
+          ' where FGoodsCode like :goodInfo or FGoodsName like :goodInfo order by FGoodsCode ';
         lFDQuery.Params[0].AsString := '%' + goodInfo + '%';
       end;
       // 分页设置
@@ -267,7 +269,7 @@ function TUniGoodsController.GetGoods(QGoodsID: string): TActionResult<TGoodsDem
 var
   lZTItem: TOneZTItem;
   lFDQuery: TFDQuery;
-  lOneTokenItem: IOneTokenItem;
+  lOneTokenItem:TOneTokenItem;
   lOneZTMange: TOneZTManage;
   lOneTokenManage: TOneTokenManage;
   lGoodDemo: TGoodsDemo;
@@ -334,7 +336,7 @@ function TUniGoodsController.SaveGoods(QGoods: TGoodsDemo): TActionResult<string
 var
   lZTItem: TOneZTItem;
   lFDQuery: TFDQuery;
-  lOneTokenItem: IOneTokenItem;
+  lOneTokenItem:TOneTokenItem;
   lOneZTMange: TOneZTManage;
   lOneTokenManage: TOneTokenManage;
   lGoodDemo: TGoodsDemo;

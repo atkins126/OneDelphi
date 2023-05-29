@@ -28,15 +28,16 @@ package OneClient;
 {$IMPLICITBUILD ON}
 
 requires
-  vcl,
-  rtl,
+  designIde,
+  soaprtl,
   dbrtl,
+  IndySystem,
+  IndyProtocols,
+  IndyCore,
   RESTComponents,
   FireDAC,
   FireDACCommonDriver,
-  FireDACCommon,
-  soaprtl,
-  DesignIDE;
+  FireDACCommon;
 
 contains
   OneClientConnect in 'OneClientConnect.pas',
@@ -66,6 +67,12 @@ contains
   OneCrypto in 'baseLib\OneCrypto.pas',
   OneLog in 'baseLib\OneLog.pas',
   OneILog in 'baseLib\OneILog.pas',
-  OneThread in 'baseLib\OneThread.pas';
+  OneThread in 'baseLib\OneThread.pas',
+  OneClientUUID in 'OneClientUUID.pas',
+  OneClientFastLsh in 'OneFast\OneClientFastLsh.pas',
+  OneClientFastUpdate in 'OneFast\OneClientFastUpdate.pas',
+  OneClientFastFile in 'OneFast\OneClientFastFile.pas',
+  OneWebSocketClient in 'websocket\OneWebSocketClient.pas',
+  OneFunc in 'baseLib\OneFunc.pas';
 
 end.

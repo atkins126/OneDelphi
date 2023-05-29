@@ -22,7 +22,7 @@ uses
 {$IF CompilerVersion >= 35}FireDAC.Phys.SQLiteWrapper.Stat, {$ENDIF}
   FireDAC.Phys.SQLiteDef, OneDataInfo,
   OneThread, OneGUID, OneFileHelper, System.Threading, OneNeonHelper,
-  OneStreamString, OneILog, System.DateUtils;
+  OneStreamString, OneILog, System.DateUtils, System.IOUtils;
 
 type
   TOneZTSet = class;
@@ -124,7 +124,7 @@ type
     constructor Create(AOwner: TOneZTPool; QPhyDriver: string; QConnectionString: string); overload;
     destructor Destroy; override;
     procedure UnLockWork();
-    function CreateNewQuery(): TFDQuery;
+    function CreateNewQuery(QIsOpenData: Boolean = false): TFDQuery;
   Public
     property ADConnection: TFDConnection read FDConnection;
     property ADTransaction: TFDTransaction read GetADTransaction;
@@ -133,6 +133,7 @@ type
     Property ADStoredProc: TFDStoredProc read GetStoredProc;
     Property IsWorking: Boolean read FIsWorking write FIsWorking;
     property DataStream: TMemoryStream read GetTempStream;
+    property FDException: TOneFDException read FException;
   end;
 
   { 一个账套池 }
@@ -177,6 +178,7 @@ type
     FStop: Boolean;
     FZTPools: TDictionary<String, TOneZTPool>;
     FTranZTItemList: TDictionary<String, TOneZTItem>;
+    FFileDataDict: TDictionary<String, TDateTime>;
     FLockObject: TObject;
     FLog: IOneLog;
     FKeepList: TList<TZTKeepInfo>;
@@ -220,6 +222,12 @@ type
     function SaveDatas(QSaveDMLDatas: TList<TOneDataSaveDML>; var QOneDataResult: TOneDataResult): Boolean;
     // 执行存储过程
     function ExecStored(QOpenData: TOneDataOpen; var QOneDataResult: TOneDataResult): Boolean;
+
+    // 执行SQL脚本语句
+    function ExecScript(QOpenData: TOneDataOpen; var QErrMsg: string): Boolean;
+
+    // 获取数据库相关信息
+    function GetDBMetaInfo(QDBMetaInfo: TOneDBMetaInfo; var QOneDataResult: TOneDataResult): Boolean;
   public
     // 主要提供给Orm用的
     function OpenData(QOpenData: TOneDataOpen; QParams: array of Variant; var QErrMsg: string): TFDMemtable; overload;
@@ -249,7 +257,13 @@ var
   var_ODBCDriverLink: TFDPhysODBCDriverLink = nil;
   var_MSAccDriverLink: TFDPhysMSAccessDriverLink = nil;
 
+var
+  // OneGlobal初始化时赋值,其它单元可以速用
+  Unit_ZTManage: TOneZTManage = nil;
+
 implementation
+
+uses OneGlobal;
 
 constructor TOneZTMangeSet.Create();
 begin
@@ -271,6 +285,7 @@ begin
 end;
 {$REGION 'TOneZTItem'}
 
+
 constructor TOneZTItem.Create(AOwner: TOneZTPool; QPhyDriver: string; QConnectionString: string);
 begin
   inherited Create;
@@ -289,6 +304,11 @@ begin
   FDConnection.DriverName := QPhyDriver;
   FDConnection.ResourceOptions.AutoReconnect := true;
   FDConnection.ResourceOptions.KeepConnection := true;
+  // 当着特定整型用 number(5,0)--至number(10,0),oracle ，pg多有
+  FDConnection.FormatOptions.MapRules.Add(5, 10, 0, 0, dtBCD, dtInt32);
+  // FDConnection.FormatOptions.MapRules.Add(0, 0, 0, 0, dtDateTime, dtDateTimeStamp);
+  if QPhyDriver.StartsWith('Ora') then
+    FDConnection.FormatOptions.MapRules.Add(1, 1, 0, 0, dtBCD, dtBoolean);
   //
   FDTransaction := TFDTransaction.Create(nil);
 
@@ -305,7 +325,7 @@ begin
   // 错误绑定
   FDQuery.OnError := FDQueryError;
   FDScript := TFDScript.Create(nil);
-  // FDScript.OnError := FDScriptError;
+  FDScript.OnError := FDQueryError;
   FDStoredProc := TFDStoredProc.Create(nil);
   // fiMeta 不保存存储过程结构每次多是重新获取
   // 设成false可以返回多个数据集,但参数返回不了,默认true只能返回一个数据集
@@ -382,7 +402,7 @@ begin
   FDQuery.Connection := FDConnection;
 end;
 
-function TOneZTItem.CreateNewQuery(): TFDQuery;
+function TOneZTItem.CreateNewQuery(QIsOpenData: Boolean = false): TFDQuery;
 begin
   Result := TFDQuery.Create(nil);
   Result.CachedUpdates := true;
@@ -395,6 +415,12 @@ begin
   Result.ResourceOptions.MacroCreate := false;
   Result.ResourceOptions.MacroExpand := false;
   Result.FormatOptions.StrsTrim2Len := true;
+  if QIsOpenData then
+  begin
+    Result.UpdateOptions.EnableDelete := false;
+    Result.UpdateOptions.EnableInsert := false;
+    Result.UpdateOptions.EnableUpdate := false;
+  end;
   Result.Connection := FDConnection;
 end;
 
@@ -449,6 +475,8 @@ begin
   if (AException <> nil) and (AException.Message <> '') then
   begin
     self.FException.FErrmsg := AException.Message;
+    //
+    OneGlobal.TOneGlobal.GetInstance().Log.WriteLog('SQLErr', AException.Message);
   end;
 end;
 
@@ -515,6 +543,7 @@ end;
 {$ENDREGION}
 // 一个账磁连接池
 {$REGION 'TOneZTPool'}
+
 
 constructor TOneZTPool.Create(QZTCode: string; QPhyDriver: string; QConnectionStr: string; QInitCount: integer; QMaxInitCount: integer);
 var
@@ -624,12 +653,14 @@ end;
 {$ENDREGION}
 {$REGION 'TOneZTManage'}
 
+
 constructor TOneZTManage.Create(QOneLog: IOneLog);
 begin
   inherited Create;
   self.FLog := QOneLog;
   FZTPools := TDictionary<String, TOneZTPool>.Create;
   FTranZTItemList := TDictionary<String, TOneZTItem>.Create;
+  FFileDataDict := TDictionary<String, TDateTime>.Create;
   FLockObject := TObject.Create;
   FKeepList := TList<TZTKeepInfo>.Create;
   FTimerThread := TOneTimerThread.Create(self.onTimerWork);
@@ -642,6 +673,7 @@ var
   i: integer;
   lZTPool: TOneZTPool;
   lZTItem: TOneZTItem;
+  lFileName, lFileID: string;
 begin
   if FTimerThread <> nil then
     FTimerThread.FreeWork;
@@ -663,6 +695,18 @@ begin
   end;
   FZTPools.Clear;
   FZTPools.Free;
+  try
+    // 临时文件删除
+    for lFileID in FFileDataDict.Keys do
+    begin
+      lFileName := OneFileHelper.CombineExeRunPath('OnePlatform\OneDataTemp\' + lFileID + '.data');
+      TFile.Delete(lFileName);
+    end;
+    FFileDataDict.Clear;
+    FFileDataDict.Free;
+  except
+
+  end;
   FLockObject.Free;
   for i := 0 to FKeepList.Count - 1 do
   begin
@@ -678,6 +722,9 @@ var
   lZTItem: TOneZTItem;
   lNow: TDateTime;
   lSpanSec: integer;
+  //
+  lFileName, lFileID: string;
+  lFileDateTime: TDateTime;
 begin
   TMonitor.Enter(FLockObject);
   try
@@ -705,6 +752,20 @@ begin
         FTranZTItemList.Remove(lZTItem.FCreateID);
       end;
     end;
+
+    for lFileID in FFileDataDict.Keys do
+    begin
+      if FFileDataDict.TryGetValue(lFileID, lFileDateTime) then
+      begin
+        // 临时保存文件的地方,10分钟后自动删除,保持硬盘健康
+        if SecondsBetween(lNow, lFileDateTime) >= 600 then
+        begin
+          lFileName := OneFileHelper.CombineExeRunPath('OnePlatform\OneDataTemp\' + lFileID + '.data');
+          TFile.Delete(lFileName);
+        end;
+      end;
+    end;
+
   finally
     TMonitor.exit(FLockObject);
   end;
@@ -984,6 +1045,7 @@ begin
   Result := FZTPools.ContainsKey(QZTCode);
 end;
 {$ENDREGION}
+
 
 function TOneZTManage.StarWork(QZTSetList: TList<TOneZTSet>; var QErrMsg: string): Boolean;
 var
@@ -1270,6 +1332,7 @@ begin
               lZip.Open(lFileName, TZipMode.zmWrite);
               lZip.Add(lMemoryStream, lFileName);
               lDataResultItem.ResultContext := lFileGuid;
+              self.FFileDataDict.Add(lFileGuid, Now);
             finally
               lZip.Free;
               lMemoryStream.Free;
@@ -1290,6 +1353,7 @@ begin
                 lZip.Open(lFileName, TZipMode.zmWrite);
                 lZip.Add(lMemoryStream, lFileName);
                 lDataResultItem.ResultContext := lFileGuid;
+                self.FFileDataDict.Add(lFileGuid, Now);
               finally
                 lZip.Free;
                 lMemoryStream.Clear;
@@ -1322,6 +1386,7 @@ begin
             LZTQuery.FetchOptions.RecsSkip := -1;
             LZTQuery.FetchOptions.RecsMax := -1;
             lSQL := ClearOrderBySQL(lOpenData.OpenSQL);
+            lSQL := lSQL.Replace(' * ', ' 1 as one_zsys_temp_aaa ');
             lSQL := 'select count(1) from ( ' + lSQL + ' ) tempCount';
             LZTQuery.SQL.Text := lSQL;
             for iParam := 0 to LZTQuery.Params.Count - 1 do
@@ -2037,6 +2102,170 @@ begin
 
 end;
 
+// 执行SQL脚本语句
+function TOneZTManage.ExecScript(QOpenData: TOneDataOpen; var QErrMsg: string): Boolean;
+var
+  lZTItem: TOneZTItem;
+  lFDScript: TFDScript;
+  lFDSQLScript: TFDSQLScript;
+  lZTCode: string;
+  lRequestMilSec: integer;
+  lwatchTimer: TStopwatch;
+begin
+  Result := false;
+  QErrMsg := '';
+  lZTItem := nil;
+  lwatchTimer := TStopwatch.StartNew;
+  try
+    if QOpenData.ZTCode = '' then
+      QOpenData.ZTCode := self.ZTMain;
+    QOpenData.ZTCode := QOpenData.ZTCode.ToUpper;
+    lZTItem := nil;
+    // 客户端发起事务,像两层一样运作
+    if QOpenData.TranID <> '' then
+    begin
+      lZTItem := self.GetTranItem(QOpenData.TranID, QErrMsg);
+    end
+    else
+    begin
+      lZTItem := self.LockZTItem(QOpenData.ZTCode, QErrMsg);
+    end;
+    if lZTItem = nil then
+    begin
+      if QErrMsg = '' then
+        QErrMsg := '获取账套' + QOpenData.ZTCode + '连接失败,原因未知';
+      exit;
+    end;
+    lFDScript := lZTItem.ADScript;
+    try
+      lFDSQLScript := lFDScript.SQLScripts.Add;
+      lFDSQLScript.SQL.Add(QOpenData.OpenSQL);
+      lFDScript.ValidateAll;
+      Result := lFDScript.ExecuteAll;
+      if not Result then
+      begin
+        if lZTItem.FException <> nil then
+        begin
+          QErrMsg := lZTItem.FException.FErrmsg;
+        end;
+      end;
+    except
+      on e: Exception do
+      begin
+        QErrMsg := e.Message;
+      end;
+    end;
+  finally
+    if lZTItem <> nil then
+    begin
+      lZTItem.UnLockWork;
+    end;
+    lwatchTimer.Stop;
+    lRequestMilSec := lwatchTimer.ElapsedMilliseconds;
+    if (self.FLog <> nil) and (self.FLog.IsSQLLog) then
+    begin
+      self.FLog.WriteSQLLog('账套方法[ExecStored]:');
+      self.FLog.WriteSQLLog('总共用时:[' + lRequestMilSec.ToString + ']毫秒');
+      self.FLog.WriteSQLLog('错误消息:[' + QErrMsg + ']');
+      self.FLog.WriteSQLLog('SQL语句:[' + QOpenData.OpenSQL + ']');
+    end;
+  end;
+end;
+
+function TOneZTManage.GetDBMetaInfo(QDBMetaInfo: TOneDBMetaInfo; var QOneDataResult: TOneDataResult): Boolean;
+var
+  lZTItem: TOneZTItem;
+  lErrMsg: string;
+  lMetaInfoQuery: TFDMetaInfoQuery;
+  tempStr: string;
+  LOneParam: TOneParam;
+  lStream, lParamStream: TMemoryStream;
+  lDataResultItem: TOneDataResultItem;
+  lPTResult: integer;
+  lRequestMilSec: integer;
+  lwatchTimer: TStopwatch;
+begin
+  Result := false;
+  lPTResult := 0;
+  if QOneDataResult = nil then
+  begin
+    QOneDataResult := TOneDataResult.Create;
+  end;
+  // 处理数据
+  if QDBMetaInfo = nil then
+  begin
+    QOneDataResult.ResultMsg := '请传入要查询的数据库信息';
+    exit;
+  end;
+  if QDBMetaInfo.MetaInfoKind = 'mkTableFields' then
+  begin
+    if QDBMetaInfo.MetaObjName = '' then
+    begin
+      QOneDataResult.ResultMsg := '获取表字段,相关表名称[MetaObjName]不可为空';
+      exit;
+    end;
+  end;
+  //
+  lMetaInfoQuery := nil;
+  lZTItem := nil;
+  lErrMsg := '';
+  lwatchTimer := TStopwatch.StartNew;
+  try
+    if QDBMetaInfo.ZTCode = '' then
+      QDBMetaInfo.ZTCode := self.ZTMain;
+    QDBMetaInfo.ZTCode := QDBMetaInfo.ZTCode.ToUpper;
+    // 客户端发起事务,像两层一样运作
+    lZTItem := self.LockZTItem(QDBMetaInfo.ZTCode, lErrMsg);
+    if lZTItem = nil then
+    begin
+      if lErrMsg = '' then
+        lErrMsg := '获取账套' + QDBMetaInfo.ZTCode + '连接失败,原因未知';
+      exit;
+    end;
+    lMetaInfoQuery := TFDMetaInfoQuery.Create(nil);
+    lMetaInfoQuery.Connection := lZTItem.ADConnection;
+    lMetaInfoQuery.ObjectName := QDBMetaInfo.MetaObjName;
+    lMetaInfoQuery.MetaInfoKind := TFDPhysMetaInfoKind(GetEnumValue(TypeInfo(TFDPhysMetaInfoKind), QDBMetaInfo.MetaInfoKind));
+    // ExecProc 执行一个存储过程返回参数
+    try
+      lMetaInfoQuery.Open;
+      lDataResultItem := TOneDataResultItem.Create;
+      QOneDataResult.ResultItems.Add(lDataResultItem);
+      lDataResultItem.ResultDataMode := const_DataReturnMode_Stream;
+      lStream := TMemoryStream.Create;
+      lMetaInfoQuery.SaveToStream(lStream, TFDStorageFormat.sfBinary);
+      lDataResultItem.SetStream(lStream);
+      Result := true;
+      QOneDataResult.ResultOK := true;
+    except
+      on e: Exception do
+      begin
+        lErrMsg := '执行存储过程异常:' + e.Message;
+        exit;
+      end;
+    end;
+  finally
+    QOneDataResult.ResultMsg := lErrMsg;
+    if lZTItem <> nil then
+    begin
+      lZTItem.UnLockWork;
+    end;
+    if lMetaInfoQuery <> nil then
+    begin
+      lMetaInfoQuery.Free;
+    end;
+    lwatchTimer.Stop;
+    lRequestMilSec := lwatchTimer.ElapsedMilliseconds;
+    if (self.FLog <> nil) and (self.FLog.IsSQLLog) then
+    begin
+      self.FLog.WriteSQLLog('账套方法[GetDBMetaInfo]:');
+      self.FLog.WriteSQLLog('总共用时:[' + lRequestMilSec.ToString + ']毫秒');
+      self.FLog.WriteSQLLog('错误消息:[' + lErrMsg + ']');
+      self.FLog.WriteSQLLog('类型:[' + QDBMetaInfo.MetaInfoKind + ']');
+    end;
+  end;
+end;
+
 procedure InitPhyDriver;
 const
   // Ora数据库
@@ -2066,7 +2295,7 @@ const
   // MSAcc驱动
 
 var
-  vExeName, lExePath: string;
+  vExeName, lExePath, lFileName: string;
 begin
   if Var_MSSQLDriverLink = nil then
     Var_MSSQLDriverLink := TFDPhysMSSQLDriverLink.Create(nil);
@@ -2101,54 +2330,80 @@ begin
 
   lExePath := OneFileHelper.GetExeRunPath;
 {$IF Defined(CPUX86)}
-  if FileExists(lExePath + const_OraOciDll32) then
-    Var_OracleDriverLink.VendorLib := lExePath + const_OraOciDll32;
-  if FileExists(lExePath + const_Libmysql32) then
-    Var_MySQLDriverLink.VendorLib := lExePath + const_Libmysql32;
-  if FileExists(lExePath + const_Libpg32) then
-    var_PGDriverLink.VendorLib := lExePath + const_Libpg32;
-  if FileExists(lExePath + const_Libfb32) then
+  lFileName := OneFileHelper.CombinePath(lExePath, const_OraOciDll32);
+  if FileExists(lFileName) then
+    Var_OracleDriverLink.VendorLib := lFileName;
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Libmysql32);
+  if FileExists(lFileName) then
+    Var_MySQLDriverLink.VendorLib := lFileName;
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Libpg32);
+  if FileExists(lFileName) then
+    var_PGDriverLink.VendorLib := lFileName;
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Libfb32);
+  if FileExists(lFileName) then
   begin
     var_FireBirdDriverLinK := TFDPhysFBDriverLink.Create(nil);
-    var_FireBirdDriverLinK.VendorLib := lExePath + const_Libfb32;
+    var_FireBirdDriverLinK.VendorLib := lFileName;
   end;
-  if FileExists(lExePath + const_Libfbb32) then
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Libfbb32);
+  if FileExists(lFileName) then
   begin
     var_FireBirdDriverLinKB := TFDPhysFBDriverLink.Create(nil);
-    var_FireBirdDriverLinKB.VendorLib := lExePath + const_Libfbb32;
+    var_FireBirdDriverLinKB.VendorLib := lFileName;
   end;
-  if FileExists(lExePath + const_Lib3SQLite32) then
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Lib3SQLite32);
+  if FileExists(lFileName) then
   begin
-    var_SQLiteDriverLinK.VendorLib := lExePath + const_Lib3SQLite32;
+    var_SQLiteDriverLinK.VendorLib := lFileName;
   end;
-  if FileExists(lExePath + const_LibASA32) then
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_LibASA32);
+  if FileExists(lFileName) then
   begin
-    var_ASADriverLink.VendorLib := lExePath + const_LibASA32;
+    var_ASADriverLink.VendorLib := lFileName;
   end;
 {$ELSEIF Defined(CPUX64)}
-  if FileExists(lExePath + const_OraOciDll64) then
-    Var_OracleDriverLink.VendorLib := lExePath + const_OraOciDll64;
-  if FileExists(lExePath + const_Libmysql64) then
-    Var_MySQLDriverLink.VendorLib := lExePath + const_Libmysql64;
-  if FileExists(lExePath + const_Libpg64) then
-    var_PGDriverLink.VendorLib := lExePath + const_Libpg64;
-  if FileExists(lExePath + const_Libfb64) then
+  lFileName := OneFileHelper.CombinePath(lExePath, const_OraOciDll64);
+  if FileExists(lFileName) then
+    Var_OracleDriverLink.VendorLib := lFileName;
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Libmysql64);
+  if FileExists(lFileName) then
+    Var_MySQLDriverLink.VendorLib := lFileName;
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Libpg64);
+  if FileExists(lFileName) then
+    var_PGDriverLink.VendorLib := lFileName;
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Libfb64);
+  if FileExists(lFileName) then
   begin
     var_FireBirdDriverLinK := TFDPhysFBDriverLink.Create(nil);
-    var_FireBirdDriverLinK.VendorLib := lExePath + const_Libfb64;
+    var_FireBirdDriverLinK.VendorLib := lFileName;
   end;
-  if FileExists(lExePath + const_Libfbb64) then
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Libfbb64);
+  if FileExists(lFileName) then
   begin
     var_FireBirdDriverLinKB := TFDPhysFBDriverLink.Create(nil);
-    var_FireBirdDriverLinKB.VendorLib := lExePath + const_Libfbb64;
+    var_FireBirdDriverLinKB.VendorLib := lFileName;
   end;
-  if FileExists(lExePath + const_Lib3SQLite64) then
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_Lib3SQLite64);
+  if FileExists(lFileName) then
   begin
-    var_SQLiteDriverLinK.VendorLib := lExePath + const_Lib3SQLite64;
+    var_SQLiteDriverLinK.VendorLib := lFileName;
   end;
-  if FileExists(lExePath + const_LibASA64) then
+  //
+  lFileName := OneFileHelper.CombinePath(lExePath, const_LibASA64);
+  if FileExists(lFileName) then
   begin
-    var_ASADriverLink.VendorLib := lExePath + const_LibASA64;
+    var_ASADriverLink.VendorLib := lFileName;
   end;
 {$ENDIF CPUX64}
 end;
