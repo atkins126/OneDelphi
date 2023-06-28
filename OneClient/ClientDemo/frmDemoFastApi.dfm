@@ -179,7 +179,7 @@ object frDemoFastApi: TfrDemoFastApi
     Height = 615
     Align = alClient
     TabOrder = 6
-    Properties.ActivePage = cxTabSheet1
+    Properties.ActivePage = tabSheetData
     Properties.CustomButtons.Buttons = <>
     Properties.Style = 10
     ExplicitWidth = 1226
@@ -190,8 +190,6 @@ object frDemoFastApi: TfrDemoFastApi
     object tabSheetData: TcxTabSheet
       Caption = #25968#25454#35774#35745
       ImageIndex = 0
-      ExplicitWidth = 1226
-      ExplicitHeight = 593
       object pgData: TcxPageControl
         Left = 230
         Top = 0
@@ -199,11 +197,9 @@ object frDemoFastApi: TfrDemoFastApi
         Height = 594
         Align = alClient
         TabOrder = 0
-        Properties.ActivePage = tabSheetField
+        Properties.ActivePage = tabSheetParams
         Properties.CustomButtons.Buttons = <>
         Properties.Style = 10
-        ExplicitWidth = 996
-        ExplicitHeight = 593
         ClientRectBottom = 594
         ClientRectRight = 1000
         ClientRectTop = 21
@@ -456,8 +452,6 @@ object frDemoFastApi: TfrDemoFastApi
         object tabSheetField: TcxTabSheet
           Caption = #23383#27573#20449#24687
           ImageIndex = 1
-          ExplicitWidth = 996
-          ExplicitHeight = 572
           object Panel3: TPanel
             Left = 0
             Top = 0
@@ -466,7 +460,6 @@ object frDemoFastApi: TfrDemoFastApi
             Align = alTop
             BevelOuter = bvNone
             TabOrder = 0
-            ExplicitWidth = 996
             object tbFieldAdd: TcxButton
               Left = 2
               Top = 4
@@ -515,8 +508,6 @@ object frDemoFastApi: TfrDemoFastApi
             Height = 538
             Align = alClient
             TabOrder = 1
-            ExplicitWidth = 996
-            ExplicitHeight = 537
             object vwField: TcxGridDBTableView
               Navigator.Buttons.CustomButtons = <>
               ScrollbarAnnotations.CustomAnnotations = <>
@@ -930,7 +921,6 @@ object frDemoFastApi: TfrDemoFastApi
         Align = alLeft
         Caption = 'Panel1'
         TabOrder = 1
-        ExplicitHeight = 593
         object Panel2: TPanel
           Left = 1
           Top = 1
@@ -988,7 +978,6 @@ object frDemoFastApi: TfrDemoFastApi
           RootValue = -1
           ScrollbarAnnotations.CustomAnnotations = <>
           TabOrder = 1
-          ExplicitHeight = 556
           object colFMenuTreeCode: TcxDBTreeListColumn
             Caption.Text = #33410#28857
             DataBinding.FieldName = 'FTreeCode'
@@ -1113,6 +1102,8 @@ object frDemoFastApi: TfrDemoFastApi
     object cxTabSheet2: TcxTabSheet
       Caption = #35831#27714#25968#25454#30340#26684#24335#21442#32771
       ImageIndex = 2
+      ExplicitWidth = 1226
+      ExplicitHeight = 593
       object Memo1: TMemo
         Left = 249
         Top = 0
@@ -1128,6 +1119,7 @@ object frDemoFastApi: TfrDemoFastApi
           '    "apiZTCode":""  //'#25351#23450#26597#35810#21738#20010#36134#22871','#21487#20197#25918#31354#65292#25918#31354#23601#26159#20027#36134#22871
           '}')
         TabOrder = 0
+        ExplicitHeight = 593
       end
       object Memo2: TMemo
         Left = 0
@@ -1144,6 +1136,7 @@ object frDemoFastApi: TfrDemoFastApi
           '    "apiZTCode":""'
           '}')
         TabOrder = 1
+        ExplicitHeight = 593
       end
     end
   end
@@ -1226,6 +1219,10 @@ object frDemoFastApi: TfrDemoFastApi
         end
         item
           Visible = True
+          ItemName = 'tbReportDesign'
+        end
+        item
+          Visible = True
           ItemName = 'tbRefreshApi'
         end
         item
@@ -1305,6 +1302,15 @@ object frDemoFastApi: TfrDemoFastApi
       OnClick = tbRefreshApiClick
       AutoGrayScale = False
       LargeImageIndex = 3
+    end
+    object tbReportDesign: TdxBarLargeButton
+      Caption = #25509#21475#25253#34920#35774#35745
+      Category = 0
+      Hint = #25509#21475#25253#34920#35774#35745
+      Visible = ivAlways
+      OnClick = tbReportDesignClick
+      AutoGrayScale = False
+      LargeImageIndex = 2
     end
   end
   object cxImageList1: TcxImageList
