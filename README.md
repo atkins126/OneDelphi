@@ -54,6 +54,15 @@ QQ群：814696487（原来的群被封了，请加新群）
 ![](https://bbs.2ccc.com/attachments/2023/flmbbb_202358101428.jpg "title")
 
 ## 更新日志
+************2023-08-15***********  
+服务端:  
+	1.服务端HTTP保持连接功能 FKeepAliveTimeOut设成0,不保持,HTTP短连接，用完即放，主要是为了高并发更健康  
+                   constructor TOneHttpServer.Create(QLog: IOneLog);  
+	2.FastApi增加批量保存数据的功能，及一些BUG和相关功能的纠正  
+	3.其它优化  
+客户端:  
+	1.FastApiDemo增加相关批量保存数据的功能  
+	
 ************2023-07-04***********  
 服务端:  
 	1.服务端账套管理，增加扩容,当池用尽，无限扩容，用完自动释放连接  
@@ -466,3 +475,5 @@ OneDelphi正式版,正式发布.
         4.增加Api使用Demo  
         5.优化一些功能  
 ### Delphi三层中间件 Dephi中间件 Delphi开源中间件
+### 叫兽的另一款[OneLazarus中间件](https://github.com/xenli/OneLazarus "OneLazarus中间件")
+### 群友维护的基于[Cross-Socket OneDelphi中间件](https://gitee.com/cityboat/OnePascal "Cross-Socket OneDelphi中间件")
